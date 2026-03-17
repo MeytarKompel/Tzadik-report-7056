@@ -1,6 +1,7 @@
 import InventoryItemModel, { IInventoryItem } from "../4-models/inventory-item-model";
 import UserModel from "../4-models/user-model";
 import DeviceModel from "../4-models/device-model";
+import ReportModel from "../4-models/report-model";
 
 async function getAllInventoryItems(): Promise<IInventoryItem[]> {
     return InventoryItemModel.find({ isDeleted: false })
@@ -60,6 +61,44 @@ async function getActiveAssignedInventoryItemForUserAndDevice(
     }).exec();
 }
 
+
+async function getDailyInventoryStatus(reportDate: string): Promise<any[]> {
+    const items = await InventoryItemModel.find({
+        isDeleted: false,
+        status: "assigned"
+    }).sort({ createdAt: -1 }).lean().exec();
+
+    const result = await Promise.all(
+        items.map(async (item) => {
+            const report = await ReportModel.findOne({
+                deviceNumber: item.deviceNumber,
+                reportDate
+            }).lean().exec();
+
+            const device = await DeviceModel.findOne({
+                deviceNumber: item.deviceNumber
+            }).lean().exec();
+
+            return {
+                inventoryItemId: item._id,
+                deviceNumber: item.deviceNumber,
+                deviceName: device?.deviceName ?? null,
+                unit: item.unit,
+                unitResponsibleUserId: item.unitResponsibleUserId,
+                assignedToUserId: item.assignedToUserId,
+                reportDate,
+                dailyReportStatus: report?.status ?? "not_reported",
+                reportId: report?._id ?? null,
+                lastReportDate: item.lastReportDate ?? null,
+                lastReportStatus: item.lastReportStatus ?? null,
+                lastReportedByUserId: item.lastReportedByUserId ?? null,
+                canManagerReport: true
+            };
+        })
+    );
+
+    return result;
+}
 async function addInventoryItem(item: IInventoryItem): Promise<IInventoryItem> {
     const existingDevice = await DeviceModel.findOne({
         deviceNumber: item.deviceNumber,
@@ -212,6 +251,7 @@ export default {
     getInventoryItemsByUnit,
     getInventoryItemsByStatus,
     getActiveAssignedInventoryItemForUserAndDevice,
+    getDailyInventoryStatus,
     addInventoryItem,
     updateInventoryItem,
     returnInventoryItem,
