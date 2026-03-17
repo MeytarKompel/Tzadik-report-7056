@@ -8,8 +8,8 @@ export class ClientError {
 }
 
 export class IdNotFoundError extends ClientError {
-    public constructor(id: number) {
-        super(404, `id ${id} not found`);
+    public constructor(_id: string) {
+        super(404, `_id ${_id} not found`);
     }
 }
 

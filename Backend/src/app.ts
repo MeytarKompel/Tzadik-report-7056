@@ -1,3 +1,6 @@
+import dal from "./2-utils/dal";
+dal.connect();
+
 import express from "express";
 import cors from "cors";
 import catchAll from "./3-middleware/catch-all";
@@ -9,7 +12,7 @@ const server = express();
 
 server.use(cors());
 server.use(express.json());
-server.use("/", controller);
+server.use("/api", controller);
 server.use("*", routeNotFound);
 server.use(catchAll);
 

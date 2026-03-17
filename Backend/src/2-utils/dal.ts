@@ -1,36 +1,16 @@
-import mysql from "mysql";
+import mongoose from "mongoose";
 import config from "./config";
 
-// Creating a connection object:
-const connection = mysql.createPool({
-    host: config.mysqlHost,
-    user: config.mysqlUser,
-    password: config.mysqlPassword,
-    database: config.mysqlDatabase
-});
-
-console.log("We're connected to MySQL");
-
-function execute(sql: string): Promise<any> {
-
-    return new Promise<any>((resolve, reject) => { // To Promisify an asynchronous function
-
-        // Execute the sql on MySQL:
-        connection.query(sql, (err, result) => {
-
-            // If there is an error: 
-            if (err) {
-                reject(err);
-                return;
-            }
-
-            // No error - report data: 
-            resolve(result);
-        });
-
-    });
+async function connect(): Promise<void> {
+    try {
+        const db = await mongoose.connect(config.connectionString);
+        console.log("We're connected to MongoDB, database: " + db.connections[0].name);
+    }
+    catch(err: any) {
+        console.log(err);
+    }
 }
 
 export default {
-    execute
+    connect
 };

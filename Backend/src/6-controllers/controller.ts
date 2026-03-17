@@ -4,7 +4,7 @@ import logic from "../5-logic/logic";
 const router = express.Router();
 
 // GET http://localhost:3001/api/_____
-router.get("/api/_____", async (request: Request, response: Response, next: NextFunction) => {
+router.get("/_____", async (request: Request, response: Response, next: NextFunction) => {
     try {
         
     }

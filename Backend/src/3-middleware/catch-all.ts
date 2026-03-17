@@ -5,8 +5,6 @@ function catchAll(err: any, request: Request, response: Response, next: NextFunc
     // Log error to console:
     console.log(err);
 
-    // log error to log file...
-
     // Get status code: 
     const statusCode = err.status ? err.status : 500;
 
