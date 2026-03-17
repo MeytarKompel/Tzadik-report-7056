@@ -1,6 +1,6 @@
 import { Document, Schema, model } from "mongoose";
 
-export type UserRole = "regular" | "unit_equipment_manager" | "admin";
+export type UserRole = "regular" | "mashkash" | "admin";
 
 export interface IUser extends Document {
   personalNumber: string;
