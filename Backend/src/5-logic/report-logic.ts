@@ -112,8 +112,11 @@ async function createSecureReport(data: CreateSecureReportData): Promise<IReport
 
     const isAdmin = user.role === "admin";
     const isAssignedUser = inventoryItem.assignedToUserId === data.personalNumber;
+    const isUnitResponsible =
+        user.role === "unit_equipment_manager" &&
+        inventoryItem.unitResponsibleUserId === data.personalNumber;
 
-    if (!isAdmin && !isAssignedUser) {
+    if (!isAdmin && !isAssignedUser && !isUnitResponsible) {
         throw new Error("User is not allowed to report for this device");
     }
 
