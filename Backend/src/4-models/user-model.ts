@@ -37,7 +37,7 @@ const UserSchema = new Schema<IUser>(
             type: String,
             required: true,
             enum: {
-                values: ["regular", "unit_equipment_manager", "admin"],
+                values: ["regular", "mashkash", "admin"],
                 message: "Invalid user role"
             },
             default: "regular"
