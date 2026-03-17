@@ -66,7 +66,7 @@ router.get("/reports/missing/:reportDate", async (req: Request, res: Response, n
     }
 });
 
-// CREATE REPORT
+// CREATE REGULAR REPORT
 router.post("/reports", async (req: Request, res: Response, next: NextFunction) => {
     try {
         const report = await reportLogic.addReport(req.body);
@@ -74,6 +74,26 @@ router.post("/reports", async (req: Request, res: Response, next: NextFunction) 
     } catch (err: any) {
         if (
             err.message === "Device number does not exist" ||
+            err.message === "A report for this device already exists for this date"
+        ) {
+            return res.status(400).json({ message: err.message });
+        }
+
+        next(err);
+    }
+});
+
+// CREATE SECURE REPORT
+router.post("/reports/secure", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const report = await reportLogic.createSecureReport(req.body);
+        res.status(201).json(report);
+    } catch (err: any) {
+        if (
+            err.message === "User identification failed" ||
+            err.message === "Device not found" ||
+            err.message === "Inventory item not found for this device" ||
+            err.message === "User is not allowed to report for this device" ||
             err.message === "A report for this device already exists for this date"
         ) {
             return res.status(400).json({ message: err.message });
