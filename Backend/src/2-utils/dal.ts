@@ -1,16 +1,18 @@
 import mongoose from "mongoose";
 import config from "./config";
 
-async function connect(): Promise<void> {
-    try {
-        const db = await mongoose.connect(config.connectionString);
-        console.log("We're connected to MongoDB, database: " + db.connections[0].name);
-    }
-    catch(err: any) {
-        console.log(err);
+class Dal {
+    public async connect(): Promise<void> {
+        try {
+            await mongoose.connect(config.connectionString);
+            console.log("Connected to MongoDB Atlas");
+        } catch (err: any) {
+            console.error("MongoDB connection failed:", err.message);
+            throw err;
+        }
     }
 }
 
-export default {
-    connect
-};
+const dal = new Dal();
+
+export default dal;
