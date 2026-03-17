@@ -3,19 +3,20 @@ import inventoryItemLogic from "../5-logic/inventory-item-logic";
 
 const router = express.Router();
 
-// GET ALL
-router.get("/inventory-items", async (req: Request, res: Response, next: NextFunction) => {
+// GET DAILY STATUS FOR MANAGER SCREEN
+router.get("/inventory-items/daily-status/:reportDate", async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const items = await inventoryItemLogic.getAllInventoryItems();
+        const items = await inventoryItemLogic.getDailyInventoryStatus(req.params.reportDate);
         res.json(items);
     } catch (err) {
         next(err);
     }
 });
 
-router.get("/inventory-items/daily-status/:reportDate", async (req: Request, res: Response, next: NextFunction) => {
+// GET ALL
+router.get("/inventory-items", async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const items = await inventoryItemLogic.getDailyInventoryStatus(req.params.reportDate);
+        const items = await inventoryItemLogic.getAllInventoryItems();
         res.json(items);
     } catch (err) {
         next(err);
