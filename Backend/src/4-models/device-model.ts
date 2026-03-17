@@ -5,6 +5,7 @@ export interface IDevice extends Document {
     deviceName: string;
     isActive: boolean;
     createdAt: Date;
+    updatedAt: Date;
 }
 
 const DeviceSchema = new Schema<IDevice>(
@@ -13,35 +14,33 @@ const DeviceSchema = new Schema<IDevice>(
             type: String,
             required: [true, "Device number is required"],
             unique: true,
-            trim: true
+            trim: true,
+            match: [/^\d+$/, "Device number must contain digits only"]
         },
         deviceName: {
             type: String,
             required: [true, "Device name is required"],
-            trim: true
+            trim: true,
+            minlength: [1, "Device name cannot be empty"],
+            maxlength: [100, "Device name is too long"]
         },
         isActive: {
             type: Boolean,
             required: true,
             default: true
-        },
-        createdAt: {
-            type: Date,
-            required: true,
-            default: Date.now
         }
     },
     {
         versionKey: false,
-        collection: "devices"
+        collection: "devices",
+        timestamps: true
     }
 );
 
+// Indexes
 DeviceSchema.index({ deviceNumber: 1 }, { unique: true });
-DeviceSchema.index({ createdAt: 1 });
 DeviceSchema.index({ deviceName: 1 });
 DeviceSchema.index({ isActive: 1 });
+DeviceSchema.index({ createdAt: -1 });
 
-const DeviceModel = model<IDevice>("DeviceModel", DeviceSchema);
-
-export default DeviceModel;
+export default model<IDevice>("DeviceModel", DeviceSchema);
