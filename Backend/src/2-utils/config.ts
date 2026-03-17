@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
+import path from "path";
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 console.log("Loaded MONGO_URI:", process.env.MONGO_URI);
 

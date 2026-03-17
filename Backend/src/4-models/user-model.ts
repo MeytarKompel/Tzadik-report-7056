@@ -52,7 +52,7 @@ const UserSchema = new Schema<IUser>(
     },
     {
         versionKey: false,
-        collection: "users",
+        collection: "Users",
         timestamps: true
     }
 );
