@@ -23,6 +23,22 @@ router.get("/inventory-items", async (req: Request, res: Response, next: NextFun
     }
 });
 
+router.get(
+    "/inventory-items/unit-responsible/daily-status/:unitResponsibleUserId/:reportDate",
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const items = await inventoryItemLogic.getDailyInventoryStatusByUnitResponsibleUserId(
+                req.params.unitResponsibleUserId,
+                req.params.reportDate
+            );
+
+            res.json(items);
+        } catch (err) {
+            next(err);
+        }
+    }
+);
+
 // GET BY ID
 router.get("/inventory-items/:id", async (req: Request, res: Response, next: NextFunction) => {
     try {

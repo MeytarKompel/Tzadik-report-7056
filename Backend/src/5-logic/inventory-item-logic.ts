@@ -66,33 +66,133 @@ async function getDailyInventoryStatus(reportDate: string): Promise<any[]> {
     const items = await InventoryItemModel.find({
         isDeleted: false,
         status: "assigned"
-    }).sort({ createdAt: -1 }).lean().exec();
+    })
+        .sort({ createdAt: -1 })
+        .lean()
+        .exec();
 
     const result = await Promise.all(
         items.map(async (item) => {
-            const report = await ReportModel.findOne({
-                deviceNumber: item.deviceNumber,
-                reportDate
-            }).lean().exec();
+            const [report, device, assignedUser, unitResponsibleUser] = await Promise.all([
+                ReportModel.findOne({
+                    deviceNumber: item.deviceNumber,
+                    reportDate
+                }).lean().exec(),
 
-            const device = await DeviceModel.findOne({
-                deviceNumber: item.deviceNumber
-            }).lean().exec();
+                DeviceModel.findOne({
+                    deviceNumber: item.deviceNumber
+                }).lean().exec(),
+
+                UserModel.findOne({
+                    personalNumber: item.assignedToUserId,
+                    isActive: true
+                }).lean().exec(),
+
+                UserModel.findOne({
+                    personalNumber: item.unitResponsibleUserId,
+                    isActive: true
+                }).lean().exec()
+            ]);
+
+            return {
+                inventoryItemId: item._id,
+                deviceNumber: item.deviceNumber,
+                deviceName: device?.deviceName ?? null,
+
+                unit: item.unit,
+
+                // 👤 מי שחתום על המכשיר
+                assignedUser: {
+                    personalNumber: item.assignedToUserId,
+                    fullName: assignedUser?.fullName ?? null,
+                    phone: assignedUser?.phone ?? null
+                },
+
+                // 👨‍💼 אחראי יחידה
+                unitResponsibleUser: {
+                    personalNumber: item.unitResponsibleUserId,
+                    fullName: unitResponsibleUser?.fullName ?? null,
+                    phone: unitResponsibleUser?.phone ?? null
+                },
+
+                reportDate,
+                dailyReportStatus: report?.status ?? "not_reported",
+                reportId: report?._id ?? null,
+
+                lastReportDate: item.lastReportDate ?? null,
+                lastReportStatus: item.lastReportStatus ?? null,
+                lastReportedByUserId: item.lastReportedByUserId ?? null,
+
+                canManagerReport: true
+            };
+        })
+    );
+
+    return result;
+}
+
+
+async function getDailyInventoryStatusByUnitResponsibleUserId(
+    unitResponsibleUserId: string,
+    reportDate: string
+): Promise<any[]> {
+    const items = await InventoryItemModel.find({
+        unitResponsibleUserId,
+        isDeleted: false,
+        status: "assigned"
+    })
+        .sort({ createdAt: -1 })
+        .lean()
+        .exec();
+
+    const result = await Promise.all(
+        items.map(async (item) => {
+            const [report, device, assignedUser, unitResponsibleUser] = await Promise.all([
+                ReportModel.findOne({
+                    deviceNumber: item.deviceNumber,
+                    reportDate
+                }).lean().exec(),
+
+                DeviceModel.findOne({
+                    deviceNumber: item.deviceNumber
+                }).lean().exec(),
+
+                UserModel.findOne({
+                    personalNumber: item.assignedToUserId,
+                    isActive: true
+                }).lean().exec(),
+
+                UserModel.findOne({
+                    personalNumber: item.unitResponsibleUserId,
+                    isActive: true
+                }).lean().exec()
+            ]);
 
             return {
                 inventoryItemId: item._id,
                 deviceNumber: item.deviceNumber,
                 deviceName: device?.deviceName ?? null,
                 unit: item.unit,
-                unitResponsibleUserId: item.unitResponsibleUserId,
-                assignedToUserId: item.assignedToUserId,
+
+                assignedUser: {
+                    personalNumber: item.assignedToUserId,
+                    fullName: assignedUser?.fullName ?? null,
+                    phone: assignedUser?.phone ?? null
+                },
+
+                unitResponsibleUser: {
+                    personalNumber: item.unitResponsibleUserId,
+                    fullName: unitResponsibleUser?.fullName ?? null,
+                    phone: unitResponsibleUser?.phone ?? null
+                },
+
                 reportDate,
                 dailyReportStatus: report?.status ?? "not_reported",
                 reportId: report?._id ?? null,
+
                 lastReportDate: item.lastReportDate ?? null,
                 lastReportStatus: item.lastReportStatus ?? null,
-                lastReportedByUserId: item.lastReportedByUserId ?? null,
-                canManagerReport: true
+                lastReportedByUserId: item.lastReportedByUserId ?? null
             };
         })
     );
@@ -252,6 +352,7 @@ export default {
     getInventoryItemsByStatus,
     getActiveAssignedInventoryItemForUserAndDevice,
     getDailyInventoryStatus,
+    getDailyInventoryStatusByUnitResponsibleUserId,
     addInventoryItem,
     updateInventoryItem,
     returnInventoryItem,
