@@ -13,6 +13,54 @@ router.get("/inventory-sheets", async (req: Request, res: Response, next: NextFu
     }
 });
 
+// GET SHEET WITH ALL ITEMS
+router.get("/inventory-sheets/:id/with-items", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const sheet = await inventorySheetLogic.getInventorySheetWithItems(req.params.id);
+
+        if (!sheet) {
+            return res.status(404).json({ message: "Inventory sheet not found" });
+        }
+
+        res.json(sheet);
+    } catch (err) {
+        next(err);
+    }
+});
+
+// GET SHEET SUMMARY
+router.get("/inventory-sheets/:id/summary", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const summary = await inventorySheetLogic.getInventorySheetSummary(req.params.id);
+
+        if (!summary) {
+            return res.status(404).json({ message: "Inventory sheet not found" });
+        }
+
+        res.json(summary);
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ADD ITEM TO SHEET
+router.post("/inventory-sheets/:id/items", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const item = await inventorySheetLogic.addInventoryItemToSheet(req.params.id, req.body);
+        res.status(201).json(item);
+    } catch (err: any) {
+        if (
+            err.message === "Inventory sheet not found" ||
+            err.message === "Cannot add items to a closed inventory sheet" ||
+            err.message === "Inventory item already exists for this sheet and device number"
+        ) {
+            return res.status(400).json({ message: err.message });
+        }
+
+        next(err);
+    }
+});
+
 // GET BY ID
 router.get("/inventory-sheets/:id", async (req: Request, res: Response, next: NextFunction) => {
     try {
