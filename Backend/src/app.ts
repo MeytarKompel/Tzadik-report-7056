@@ -10,6 +10,7 @@ import config from "./2-utils/config";
 import userController from "./6-controllers/user-controller";
 import reportController from "./6-controllers/report-controller";
 import inventoryItemController from "./6-controllers/inventory-item-controller";
+import inventorySheetController from "./6-controllers/inventory-sheet-controller";
 
 const server = express();
 
@@ -19,6 +20,7 @@ server.use("/api", deviceController);
 server.use("/api", userController);
 server.use("/api", reportController);
 server.use("/api", inventoryItemController);
+server.use("/api", inventorySheetController);
 server.use("*", routeNotFound);
 server.use(catchAll);
 
