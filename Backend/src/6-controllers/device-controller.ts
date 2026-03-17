@@ -1,127 +1,90 @@
-import { Request, Response, NextFunction } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import deviceLogic from "../5-logic/device-logic";
-class DeviceController {
 
-    public async getAllDevices(request: Request, response: Response, next: NextFunction): Promise<void> {
-        try {
-            const devices = await deviceLogic.getAllDevices();
-            response.json(devices);
-        }
-        catch (err) {
-            next(err);
-        }
+const router = express.Router();
+
+// GET ALL
+router.get("/devices", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const devices = await deviceLogic.getAllDevices();
+        res.json(devices);
+    } catch (err) {
+        next(err);
     }
+});
 
-    public async getDeviceByMongoId(request: Request, response: Response, next: NextFunction): Promise<void> {
-        try {
-            const id = request.params.id;
-            const device = await deviceLogic.getDeviceByMongoId(id);
+// GET BY NUMBER
+router.get("/devices/:deviceNumber", async (req, res, next) => {
+    try {
+        const device = await deviceLogic.getDeviceByNumber(req.params.deviceNumber);
 
-            if (!device) {
-                response.status(404).json({ message: "Device not found" });
-                return;
-            }
+        if (!device) return res.status(404).json({ message: "Device not found" });
 
-            response.json(device);
-        }
-        catch (err) {
-            next(err);
-        }
+        res.json(device);
+    } catch (err) {
+        next(err);
     }
+});
 
-    public async getDeviceByNumber(request: Request, response: Response, next: NextFunction): Promise<void> {
-        try {
-            const deviceNumber = request.params.deviceNumber;
-            const device = await deviceLogic.getDeviceByNumber(deviceNumber);
 
-            if (!device) {
-                response.status(404).json({ message: "Device not found" });
-                return;
-            }
+// GET BY NAME
+router.get("/devices/:deviceName", async (req, res, next) => {
+    try {
+        const device = await deviceLogic.getDeviceByName(req.params.deviceName);
 
-            response.json(device);
-        }
-        catch (err) {
-            next(err);
-        }
+        if (!device) return res.status(404).json({ message: "Device not found" });
+
+        res.json(device);
+    } catch (err) {
+        next(err);
     }
+});
 
 
-        public async getDeviceByName(request: Request, response: Response, next: NextFunction): Promise<void> {
-        try {
-            const deviceName = request.params.deviceName;
-            const device = await deviceLogic.getDeviceByName(deviceName);
 
-            if (!device) {
-                response.status(404).json({ message: "Device not found" });
-                return;
-            }
-
-            response.json(device);
+// CREATE
+router.post("/devices", async (req, res, next) => {
+    try {
+        const device = await deviceLogic.addDevice(req.body);
+        res.status(201).json(device);
+    } catch (err: any) {
+        if (err.message === "Device number already exists") {
+            return res.status(400).json({ message: err.message });
         }
-        catch (err) {
-            next(err);
-        }
+        next(err);
     }
+});
 
-    public async addDevice(request: Request, response: Response, next: NextFunction): Promise<void> {
-        try {
-            const device = request.body;
-            const addedDevice = await deviceLogic.addDevice(device);
-            response.status(201).json(addedDevice);
-        }
-        catch (err: any) {
-            if (err.message === "Device number already exists") {
-                response.status(400).json({ message: err.message });
-                return;
-            }
+// UPDATE
+router.put("/devices/:deviceNumber", async (req, res, next) => {
+    try {
+        const updated = await deviceLogic.updateDeviceByMongoId(
+            req.params.deviceNumber,
+            req.body
+        );
 
-            next(err);
+        if (!updated) return res.status(404).json({ message: "Device not found" });
+
+        res.json(updated);
+    } catch (err: any) {
+        if (err.message === "Device number already exists") {
+            return res.status(400).json({ message: err.message });
         }
+        next(err);
     }
+});
 
-    public async updateDeviceByMongoId(request: Request, response: Response, next: NextFunction): Promise<void> {
-        try {
-            const id = request.params.id;
-            const device = request.body;
+// DELETE
+router.delete("/devices/:deviceNumber", async (req, res, next) => {
+    try {
+        const deleted = await deviceLogic.deleteDeviceByMongoId(req.params.deviceNumber);
 
-            const updatedDevice = await deviceLogic.updateDeviceByMongoId(id, device);
+        if (!deleted) return res.status(404).json({ message: "Device not found" });
 
-            if (!updatedDevice) {
-                response.status(404).json({ message: "Device not found" });
-                return;
-            }
-
-            response.json(updatedDevice);
-        }
-        catch (err: any) {
-            if (err.message === "Device number already exists") {
-                response.status(400).json({ message: err.message });
-                return;
-            }
-
-            next(err);
-        }
+        res.json({ message: "Device deleted", deleted });
+    } catch (err) {
+        next(err);
     }
+});
 
-    public async deleteDeviceByMongoId(request: Request, response: Response, next: NextFunction): Promise<void> {
-        try {
-            const id = request.params.id;
-            const deletedDevice = await deviceLogic.deleteDeviceByMongoId(id);
-
-            if (!deletedDevice) {
-                response.status(404).json({ message: "Device not found" });
-                return;
-            }
-
-            response.json({ message: "Device deleted successfully", deletedDevice });
-        }
-        catch (err) {
-            next(err);
-        }
-    }
-}
-
-const deviceController = new DeviceController();
-
-export default deviceController;
+export default router;
