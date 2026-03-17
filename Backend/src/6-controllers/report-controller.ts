@@ -33,11 +33,23 @@ router.get("/reports/by-device/:deviceNumber", async (req: Request, res: Respons
     }
 });
 
-
-// GET REPORTS BY DEVICE NUMBER
-router.get("/reports/by-device/:deviceNumber", async (req: Request, res: Response, next: NextFunction) => {
+// GET REPORTS BY UNIT
+router.get("/reports/by-unit/:unit", async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const reports = await reportLogic.getReportsByUnitName(req.params.deviceNumber);
+        const reports = await reportLogic.getReportsByUnit(req.params.unit);
+        res.json(reports);
+    } catch (err) {
+        next(err);
+    }
+});
+
+// GET REPORTS BY UNIT AND DATE
+router.get("/reports/by-unit/:unit/by-date/:reportDate", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const reports = await reportLogic.getReportsByUnitAndDate(
+            req.params.unit,
+            req.params.reportDate
+        );
         res.json(reports);
     } catch (err) {
         next(err);
@@ -76,7 +88,9 @@ router.put("/reports/:id", async (req: Request, res: Response, next: NextFunctio
     try {
         const report = await reportLogic.updateReport(req.params.id, req.body);
 
-        if (!report) return res.status(404).json({ message: "Report not found" });
+        if (!report) {
+            return res.status(404).json({ message: "Report not found" });
+        }
 
         res.json(report);
     } catch (err: any) {
@@ -96,7 +110,9 @@ router.delete("/reports/:id", async (req: Request, res: Response, next: NextFunc
     try {
         const deleted = await reportLogic.deleteReport(req.params.id);
 
-        if (!deleted) return res.status(404).json({ message: "Report not found" });
+        if (!deleted) {
+            return res.status(404).json({ message: "Report not found" });
+        }
 
         res.json({ message: "Report deleted", deleted });
     } catch (err) {
