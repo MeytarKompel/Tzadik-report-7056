@@ -13,6 +13,17 @@ async function getReportsByDeviceNumber(deviceNumber: string): Promise<IReport[]
     return ReportModel.find({ deviceNumber }).sort({ createdAt: -1 }).exec();
 }
 
+async function getReportsByUnitName(unit: string): Promise<IReport[]> {
+    return ReportModel.find({ unit }).sort({ createdAt: -1 }).exec();
+}
+
+async function getReportsByUnitNameAndDate(unit: string, reportDate: string): Promise<IReport[]> {
+    return ReportModel.find({
+        unit,
+        reportDate
+    }).sort({ createdAt: -1 }).exec();
+}
+
 async function getDailyMissingReports(reportDate: string): Promise<IReport[]> {
     return ReportModel.find({
         reportDate,
@@ -76,6 +87,8 @@ export default {
     getAllReports,
     getReportsByDate,
     getReportsByDeviceNumber,
+    getReportsByUnitName,
+    getReportsByUnitNameAndDate,
     getDailyMissingReports,
     addReport,
     updateReport,

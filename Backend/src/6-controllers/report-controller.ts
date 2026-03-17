@@ -33,6 +33,17 @@ router.get("/reports/by-device/:deviceNumber", async (req: Request, res: Respons
     }
 });
 
+
+// GET REPORTS BY DEVICE NUMBER
+router.get("/reports/by-device/:deviceNumber", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const reports = await reportLogic.getReportsByUnitName(req.params.deviceNumber);
+        res.json(reports);
+    } catch (err) {
+        next(err);
+    }
+});
+
 // GET DAILY NOT REPORTED
 router.get("/reports/missing/:reportDate", async (req: Request, res: Response, next: NextFunction) => {
     try {
