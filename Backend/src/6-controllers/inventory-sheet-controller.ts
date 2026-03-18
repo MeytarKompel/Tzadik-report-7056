@@ -43,24 +43,7 @@ router.get("/inventory-sheets/:id/summary", async (req: Request, res: Response, 
     }
 });
 
-// ADD ITEM TO SHEET
-router.post("/inventory-sheets/:id/items", async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const item = await inventorySheetLogic.addInventoryItemToSheet(req.params.id, req.body);
-        res.status(201).json(item);
-    } catch (err: any) {
-        if (
-            err.message === "Inventory sheet not found" ||
-            err.message === "Cannot add items to a closed inventory sheet" ||
-            err.message === "Inventory item already exists for this sheet and device number"
-        ) {
-            return res.status(400).json({ message: err.message });
-        }
-
-        next(err);
-    }
-});
-
+// GET SHEET FULL
 router.get("/inventory-sheets/:id/full", async (req: Request, res: Response, next: NextFunction) => {
     try {
         const sheet = await inventorySheetLogic.getInventorySheetFull(
@@ -78,16 +61,11 @@ router.get("/inventory-sheets/:id/full", async (req: Request, res: Response, nex
     }
 });
 
-// GET BY ID
-router.get("/inventory-sheets/:id", async (req: Request, res: Response, next: NextFunction) => {
+// ADD ITEM TO SHEET
+router.post("/inventory-sheets/:id/items", async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const sheet = await inventorySheetLogic.getInventorySheetById(req.params.id);
-
-        if (!sheet) {
-            return res.status(404).json({ message: "Inventory sheet not found" });
-        }
-
-        res.json(sheet);
+        const item = await inventorySheetLogic.addInventoryItemToSheet(req.params.id, req.body);
+        res.status(201).json(item);
     } catch (err) {
         next(err);
     }
@@ -113,16 +91,27 @@ router.get("/inventory-sheets/by-creator/:createdByUserId", async (req: Request,
     }
 });
 
+// GET BY ID
+router.get("/inventory-sheets/:id", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const sheet = await inventorySheetLogic.getInventorySheetById(req.params.id);
+
+        if (!sheet) {
+            return res.status(404).json({ message: "Inventory sheet not found" });
+        }
+
+        res.json(sheet);
+    } catch (err) {
+        next(err);
+    }
+});
+
 // CREATE REGULAR
 router.post("/inventory-sheets", async (req: Request, res: Response, next: NextFunction) => {
     try {
         const sheet = await inventorySheetLogic.addInventorySheet(req.body);
         res.status(201).json(sheet);
-    } catch (err: any) {
-        if (err.message === "Created by user does not exist") {
-            return res.status(400).json({ message: err.message });
-        }
-
+    } catch (err) {
         next(err);
     }
 });
@@ -132,14 +121,7 @@ router.post("/inventory-sheets/create-clean", async (req: Request, res: Response
     try {
         const sheet = await inventorySheetLogic.createCleanInventorySheet(req.body);
         res.status(201).json(sheet);
-    } catch (err: any) {
-        if (
-            err.message === "Created by user does not exist" ||
-            err.message === "Only admin can create a new inventory sheet"
-        ) {
-            return res.status(400).json({ message: err.message });
-        }
-
+    } catch (err) {
         next(err);
     }
 });
@@ -154,11 +136,7 @@ router.put("/inventory-sheets/:id", async (req: Request, res: Response, next: Ne
         }
 
         res.json(sheet);
-    } catch (err: any) {
-        if (err.message === "Created by user does not exist") {
-            return res.status(400).json({ message: err.message });
-        }
-
+    } catch (err) {
         next(err);
     }
 });
