@@ -15,39 +15,52 @@ type CreateSecureReportData = {
 };
 
 async function getAllReports(): Promise<IReport[]> {
-    return ReportModel.find().sort({ createdAt: -1 }).exec();
+    return ReportModel.find()
+        .sort({ createdAt: -1 })
+        .exec();
 }
 
 async function getReportsByDate(reportDate: string): Promise<IReport[]> {
-    return ReportModel.find({ reportDate }).sort({ createdAt: -1 }).exec();
+    return ReportModel.find({ reportDate })
+        .sort({ createdAt: -1 })
+        .exec();
 }
 
 async function getReportsByDeviceNumber(deviceNumber: string): Promise<IReport[]> {
-    return ReportModel.find({ deviceNumber }).sort({ createdAt: -1 }).exec();
+    return ReportModel.find({ deviceNumber })
+        .sort({ createdAt: -1 })
+        .exec();
 }
 
 async function getReportsByUnit(unit: string): Promise<IReport[]> {
-    return ReportModel.find({ unit }).sort({ createdAt: -1 }).exec();
+    return ReportModel.find({ unit })
+        .sort({ createdAt: -1 })
+        .exec();
 }
 
 async function getReportsByUnitAndDate(unit: string, reportDate: string): Promise<IReport[]> {
-    return ReportModel.find({ unit, reportDate }).sort({ createdAt: -1 }).exec();
+    return ReportModel.find({ unit, reportDate })
+        .sort({ createdAt: -1 })
+        .exec();
 }
 
 async function getDailyMissingReports(reportDate: string): Promise<IReport[]> {
     return ReportModel.find({
         reportDate,
         status: "not_reported"
-    }).sort({ createdAt: -1 }).exec();
+    })
+        .sort({ createdAt: -1 })
+        .exec();
 }
 
 async function addReport(report: IReport): Promise<IReport> {
     const existingDevice = await DeviceModel.findOne({
-        deviceNumber: report.deviceNumber
+        deviceNumber: report.deviceNumber,
+        isActive: true
     }).exec();
 
     if (!existingDevice) {
-        throw new ClientError(404,"Device number does not exist");
+        throw new ClientError(404, "Device number does not exist");
     }
 
     const existingReport = await ReportModel.findOne({
@@ -56,7 +69,7 @@ async function addReport(report: IReport): Promise<IReport> {
     }).exec();
 
     if (existingReport) {
-        throw new ClientError(400,"A report for this device already exists for this date");
+        throw new ClientError(400, "A report for this device already exists for this date");
     }
 
     const addedReport = await ReportModel.create(report);
@@ -89,7 +102,7 @@ async function createSecureReport(data: CreateSecureReportData): Promise<IReport
     }).exec();
 
     if (!user) {
-        throw new ClientError(404,"User identification failed");
+        throw new ClientError(400, "User identification failed");
     }
 
     const device = await DeviceModel.findOne({
@@ -98,7 +111,7 @@ async function createSecureReport(data: CreateSecureReportData): Promise<IReport
     }).exec();
 
     if (!device) {
-        throw new ClientError(404,"Device not found");
+        throw new ClientError(404, "Device not found");
     }
 
     const inventoryItem = await InventoryItemModel.findOne({
@@ -108,7 +121,7 @@ async function createSecureReport(data: CreateSecureReportData): Promise<IReport
     }).exec();
 
     if (!inventoryItem) {
-        throw new ClientError(404,"Inventory item not found for this device");
+        throw new ClientError(404, "Inventory item not found for this device");
     }
 
     const isAdmin = user.role === "admin";
@@ -118,7 +131,7 @@ async function createSecureReport(data: CreateSecureReportData): Promise<IReport
         inventoryItem.unitResponsibleUserId === data.personalNumber;
 
     if (!isAdmin && !isAssignedUser && !isUnitResponsible) {
-        throw new ClientError(403,"User is not allowed to report for this device");
+        throw new ClientError(403, "User is not allowed to report for this device");
     }
 
     const existingReport = await ReportModel.findOne({
@@ -127,7 +140,7 @@ async function createSecureReport(data: CreateSecureReportData): Promise<IReport
     }).exec();
 
     if (existingReport) {
-        throw new ClientError(400,"A report for this device already exists for this date");
+        throw new ClientError(400, "A report for this device already exists for this date");
     }
 
     const report = await ReportModel.create({
@@ -157,11 +170,12 @@ async function createSecureReport(data: CreateSecureReportData): Promise<IReport
 async function updateReport(id: string, report: Partial<IReport>): Promise<IReport | null> {
     if (report.deviceNumber) {
         const existingDevice = await DeviceModel.findOne({
-            deviceNumber: report.deviceNumber
+            deviceNumber: report.deviceNumber,
+            isActive: true
         }).exec();
 
         if (!existingDevice) {
-            throw new ClientError(404,"Device number does not exist");
+            throw new ClientError(404, "Device number does not exist");
         }
     }
 
@@ -181,13 +195,16 @@ async function updateReport(id: string, report: Partial<IReport>): Promise<IRepo
     }).exec();
 
     if (duplicateReport) {
-        throw new ClientError(404,"A report for this device already exists for this date");
+        throw new ClientError(400, "A report for this device already exists for this date");
     }
 
     const updatedReport = await ReportModel.findByIdAndUpdate(
         id,
         report,
-        { new: true, runValidators: true }
+        {
+            new: true,
+            runValidators: true
+        }
     ).exec();
 
     if (updatedReport) {
