@@ -1,6 +1,6 @@
 import { Document, Schema, model } from "mongoose";
 
-export type InventoryItemStatus = "assigned" | "returned";
+export type InventoryItemStatus = "assigned" | "returned" | "not_assigned";
 export type InventoryReportStatus = "reported" | "not_reported";
 
 export interface IInventoryItem extends Document {
@@ -8,8 +8,8 @@ export interface IInventoryItem extends Document {
     sheetId: string;
     unit: string;
     unitResponsibleUserId: string;
-    assignedToUserId: string;
-    signedAt: Date;
+    assignedToUserId?: string | null;
+    signedAt?: Date | null;
     returnedAt?: Date | null;
     status: InventoryItemStatus;
     lastReportDate?: string;
@@ -25,7 +25,7 @@ const InventoryItemSchema = new Schema<IInventoryItem>(
     {
         _id: {
             type: String,
-            required: true,
+            required: [true, "Inventory item ID is required"],
             trim: true
         },
         sheetId: {
@@ -46,13 +46,30 @@ const InventoryItemSchema = new Schema<IInventoryItem>(
         },
         assignedToUserId: {
             type: String,
-            required: [true, "Assigned user ID is required"],
             trim: true,
-            match: [/^\d+$/, "Assigned user ID must contain digits only"]
+            default: null,
+            validate: {
+                validator: function (this: IInventoryItem, value: string | null): boolean {
+                    if (this.status === "assigned") {
+                        return !!value && /^\d+$/.test(value);
+                    }
+                    return value === null || value === undefined || value === "";
+                },
+                message: "Assigned user ID is required only when status is 'assigned'"
+            }
         },
         signedAt: {
             type: Date,
-            required: [true, "Signed at is required"]
+            default: null,
+            validate: {
+                validator: function (this: IInventoryItem, value: Date | null): boolean {
+                    if (this.status === "assigned") {
+                        return value instanceof Date;
+                    }
+                    return value === null || value === undefined;
+                },
+                message: "Signed date is required only when status is 'assigned'"
+            }
         },
         returnedAt: {
             type: Date,
@@ -63,7 +80,7 @@ const InventoryItemSchema = new Schema<IInventoryItem>(
             required: [true, "Status is required"],
             enum: {
                 values: ["assigned", "returned", "not_assigned"],
-                message: "Status must be either 'assigned', 'returned', or 'not_assigned'"
+                message: "Status must be either 'assigned', 'returned' or 'not_assigned'"
             },
             default: "assigned"
         },
@@ -82,20 +99,13 @@ const InventoryItemSchema = new Schema<IInventoryItem>(
         lastReportedByUserId: {
             type: String,
             trim: true,
-            match: [/^\d+$/, "Last reported by user ID must contain digits only"]
+            default: null,
+            match: [/^\d*$/, "Last reported by user ID must contain digits only"]
         },
         isDeleted: {
             type: Boolean,
             required: true,
             default: false
-        },
-        createdAt: {
-            type: Date,
-            default: Date.now
-        },
-        updatedAt: {
-            type: Date,
-            default: Date.now
         },
         deviceNumber: {
             type: String,
@@ -106,14 +116,15 @@ const InventoryItemSchema = new Schema<IInventoryItem>(
     },
     {
         versionKey: false,
-        collection: "inventory_items"
+        collection: "inventory_items",
+        timestamps: true
     }
 );
 
-InventoryItemSchema.index({ sheetId: 1, deviceNumber: 1 }, { unique: true });
 InventoryItemSchema.index({ assignedToUserId: 1 });
 InventoryItemSchema.index({ isDeleted: 1 });
 InventoryItemSchema.index({ lastReportDate: 1 });
+InventoryItemSchema.index({ sheetId: 1, deviceNumber: 1 }, { unique: true });
 InventoryItemSchema.index({ status: 1 });
 InventoryItemSchema.index({ unitResponsibleUserId: 1 });
 InventoryItemSchema.index({ unit: 1 });
