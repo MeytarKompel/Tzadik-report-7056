@@ -2,6 +2,7 @@ import ReportModel, { IReport, ReportStatus } from "../4-models/report-model";
 import DeviceModel from "../4-models/device-model";
 import UserModel from "../4-models/user-model";
 import InventoryItemModel from "../4-models/inventory-item-model";
+import ClientError from "../2-utils/client-error";
 
 type CreateSecureReportData = {
     personalNumber: string;
@@ -46,7 +47,7 @@ async function addReport(report: IReport): Promise<IReport> {
     }).exec();
 
     if (!existingDevice) {
-        throw new Error("Device number does not exist");
+        throw new ClientError(404,"Device number does not exist");
     }
 
     const existingReport = await ReportModel.findOne({
@@ -55,7 +56,7 @@ async function addReport(report: IReport): Promise<IReport> {
     }).exec();
 
     if (existingReport) {
-        throw new Error("A report for this device already exists for this date");
+        throw new ClientError(400,"A report for this device already exists for this date");
     }
 
     const addedReport = await ReportModel.create(report);
@@ -88,7 +89,7 @@ async function createSecureReport(data: CreateSecureReportData): Promise<IReport
     }).exec();
 
     if (!user) {
-        throw new Error("User identification failed");
+        throw new ClientError(404,"User identification failed");
     }
 
     const device = await DeviceModel.findOne({
@@ -97,7 +98,7 @@ async function createSecureReport(data: CreateSecureReportData): Promise<IReport
     }).exec();
 
     if (!device) {
-        throw new Error("Device not found");
+        throw new ClientError(404,"Device not found");
     }
 
     const inventoryItem = await InventoryItemModel.findOne({
@@ -107,7 +108,7 @@ async function createSecureReport(data: CreateSecureReportData): Promise<IReport
     }).exec();
 
     if (!inventoryItem) {
-        throw new Error("Inventory item not found for this device");
+        throw new ClientError(404,"Inventory item not found for this device");
     }
 
     const isAdmin = user.role === "admin";
@@ -117,7 +118,7 @@ async function createSecureReport(data: CreateSecureReportData): Promise<IReport
         inventoryItem.unitResponsibleUserId === data.personalNumber;
 
     if (!isAdmin && !isAssignedUser && !isUnitResponsible) {
-        throw new Error("User is not allowed to report for this device");
+        throw new ClientError(403,"User is not allowed to report for this device");
     }
 
     const existingReport = await ReportModel.findOne({
@@ -126,7 +127,7 @@ async function createSecureReport(data: CreateSecureReportData): Promise<IReport
     }).exec();
 
     if (existingReport) {
-        throw new Error("A report for this device already exists for this date");
+        throw new ClientError(400,"A report for this device already exists for this date");
     }
 
     const report = await ReportModel.create({
@@ -160,7 +161,7 @@ async function updateReport(id: string, report: Partial<IReport>): Promise<IRepo
         }).exec();
 
         if (!existingDevice) {
-            throw new Error("Device number does not exist");
+            throw new ClientError(404,"Device number does not exist");
         }
     }
 
@@ -180,7 +181,7 @@ async function updateReport(id: string, report: Partial<IReport>): Promise<IRepo
     }).exec();
 
     if (duplicateReport) {
-        throw new Error("A report for this device already exists for this date");
+        throw new ClientError(404,"A report for this device already exists for this date");
     }
 
     const updatedReport = await ReportModel.findByIdAndUpdate(
