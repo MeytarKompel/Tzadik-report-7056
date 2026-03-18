@@ -1,3 +1,4 @@
+import ClientError from "../2-utils/client-error";
 import UserModel, { IUser } from "../4-models/user-model";
 
 async function getAllUsers(): Promise<IUser[]> {
@@ -33,7 +34,7 @@ async function addUser(user: IUser): Promise<IUser> {
     }).exec();
 
     if (existingPersonalNumber) {
-        throw new Error("Personal number already exists");
+        throw new ClientError(400,"Personal number already exists");
     }
 
     const existingUserIdentification = await UserModel.findOne({
@@ -42,7 +43,7 @@ async function addUser(user: IUser): Promise<IUser> {
     }).exec();
 
     if (existingUserIdentification) {
-        throw new Error("User identification already exists");
+        throw new ClientError(400,"User identification already exists");
     }
 
     return UserModel.create(user);
@@ -66,7 +67,7 @@ async function updateUser(personalNumber: string, user: Partial<IUser>): Promise
         }).exec();
 
         if (existingPersonalNumber) {
-            throw new Error("Personal number already exists");
+            throw new ClientError(400,"Personal number already exists");
         }
     }
 
@@ -80,7 +81,7 @@ async function updateUser(personalNumber: string, user: Partial<IUser>): Promise
     }).exec();
 
     if (existingUserIdentification) {
-        throw new Error("User identification already exists");
+        throw new ClientError(400,"User identification already exists");
     }
 
     return UserModel.findOneAndUpdate(
