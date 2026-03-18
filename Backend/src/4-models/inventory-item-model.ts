@@ -62,8 +62,8 @@ const InventoryItemSchema = new Schema<IInventoryItem>(
             type: String,
             required: [true, "Status is required"],
             enum: {
-                values: ["assigned", "returned"],
-                message: "Status must be either 'assigned' or 'returned'"
+                values: ["assigned", "returned", "not_assigned"],
+                message: "Status must be either 'assigned', 'returned', or 'not_assigned'"
             },
             default: "assigned"
         },
