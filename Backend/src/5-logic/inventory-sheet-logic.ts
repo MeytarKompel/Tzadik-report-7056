@@ -5,6 +5,7 @@ import UserModel from "../4-models/user-model";
 import InventoryItemModel from "../4-models/inventory-item-model";
 import DailyReportModel from "../4-models/daily-report-model";
 import DeviceModel from "../4-models/device-model";
+import ClientError from "../2-utils/client-error";
 
 async function getAllInventorySheets(): Promise<IInventorySheet[]> {
   return InventorySheetModel.find().sort({ createdAt: -1 }).exec();
@@ -39,7 +40,7 @@ async function addInventorySheet(
   }).exec();
 
   if (!creator) {
-    throw new Error("Created by user does not exist");
+    throw new ClientError(404,"Created by user does not exist");
   }
 
   return InventorySheetModel.create(sheet);
@@ -56,11 +57,11 @@ async function createCleanInventorySheet(data: {
   }).exec();
 
   if (!creator) {
-    throw new Error("Created by user does not exist");
+    throw new ClientError(404,"Created by user does not exist");
   }
 
   if (creator.role !== "admin") {
-    throw new Error("Only admin can create a new inventory sheet");
+    throw new ClientError(403,"Only admin can create a new inventory sheet");
   }
 
   const today = new Date().toISOString().slice(0, 10);
@@ -86,7 +87,7 @@ async function updateInventorySheet(
     }).exec();
 
     if (!creator) {
-      throw new Error("Created by user does not exist");
+      throw new ClientError(404,"Created by user does not exist");
     }
   }
 
@@ -151,11 +152,11 @@ async function addInventoryItemToSheet(
   const sheet = await InventorySheetModel.findById(sheetId).exec();
 
   if (!sheet) {
-    throw new Error("Inventory sheet not found");
+    throw new ClientError(404,"Inventory sheet not found");
   }
 
   if (sheet.status !== "active") {
-    throw new Error("Cannot add items to a closed inventory sheet");
+    throw new ClientError(400,"Cannot add items to a closed inventory sheet");
   }
 
   const createdItemId = `${sheetId}_${item.deviceNumber}`;
@@ -166,7 +167,8 @@ async function addInventoryItemToSheet(
   }).exec();
 
   if (existingItem) {
-    throw new Error(
+    throw new ClientError(
+      400,
       "Inventory item already exists for this sheet and device number",
     );
   }
