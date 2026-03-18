@@ -209,15 +209,6 @@ async function addInventoryItem(item: IInventoryItem): Promise<IInventoryItem> {
         throw new Error("Device number does not exist");
     }
 
-    const assignedUser = await UserModel.findOne({
-        personalNumber: item.assignedToUserId,
-        isActive: true
-    }).exec();
-
-    if (!assignedUser) {
-        throw new Error("Assigned user does not exist");
-    }
-
     const responsibleUser = await UserModel.findOne({
         personalNumber: item.unitResponsibleUserId,
         isActive: true
@@ -225,6 +216,26 @@ async function addInventoryItem(item: IInventoryItem): Promise<IInventoryItem> {
 
     if (!responsibleUser) {
         throw new Error("Unit responsible user does not exist");
+    }
+
+    if (item.status === "assigned") {
+        const assignedUser = await UserModel.findOne({
+            personalNumber: item.assignedToUserId,
+            isActive: true
+        }).exec();
+
+        if (!assignedUser) {
+            throw new Error("Assigned user does not exist");
+        }
+
+        if (!item.signedAt) {
+            throw new Error("Signed date is required when item status is assigned");
+        }
+    }
+
+    if (item.status === "not_assigned") {
+        item.assignedToUserId = null;
+        item.signedAt = null;
     }
 
     const existingSheetDevice = await InventoryItemModel.findOne({
@@ -239,8 +250,12 @@ async function addInventoryItem(item: IInventoryItem): Promise<IInventoryItem> {
     return InventoryItemModel.create(item);
 }
 
-async function updateInventoryItem(id: string, item: Partial<IInventoryItem>): Promise<IInventoryItem | null> {
-    const currentItem = await InventoryItemModel.findOne({ _id: id, isDeleted: false }).exec();
+async function updateInventoryItem(
+    id: string,
+    item: Partial<IInventoryItem>
+): Promise<IInventoryItem | null> {
+
+    const currentItem = await InventoryItemModel.findById(id).exec();
 
     if (!currentItem) {
         return null;
@@ -257,17 +272,6 @@ async function updateInventoryItem(id: string, item: Partial<IInventoryItem>): P
         }
     }
 
-    if (item.assignedToUserId) {
-        const assignedUser = await UserModel.findOne({
-            personalNumber: item.assignedToUserId,
-            isActive: true
-        }).exec();
-
-        if (!assignedUser) {
-            throw new Error("Assigned user does not exist");
-        }
-    }
-
     if (item.unitResponsibleUserId) {
         const responsibleUser = await UserModel.findOne({
             personalNumber: item.unitResponsibleUserId,
@@ -279,12 +283,43 @@ async function updateInventoryItem(id: string, item: Partial<IInventoryItem>): P
         }
     }
 
-    const updatedSheetId = item.sheetId ?? currentItem.sheetId;
+    const updatedStatus = item.status ?? currentItem.status;
+
+    if (updatedStatus === "assigned") {
+        const assignedUserId =
+            item.assignedToUserId ?? currentItem.assignedToUserId;
+
+        const signedAt =
+            item.signedAt ?? currentItem.signedAt;
+
+        if (!assignedUserId) {
+            throw new Error("Assigned user ID is required when status is assigned");
+        }
+
+        const assignedUser = await UserModel.findOne({
+            personalNumber: assignedUserId,
+            isActive: true
+        }).exec();
+
+        if (!assignedUser) {
+            throw new Error("Assigned user does not exist");
+        }
+
+        if (!signedAt) {
+            throw new Error("Signed date is required when status is assigned");
+        }
+    }
+
+    if (updatedStatus === "not_assigned") {
+        item.assignedToUserId = null;
+        item.signedAt = null;
+    }
+
     const updatedDeviceNumber = item.deviceNumber ?? currentItem.deviceNumber;
 
     const duplicateItem = await InventoryItemModel.findOne({
         _id: { $ne: id },
-        sheetId: updatedSheetId,
+        sheetId: currentItem.sheetId,
         deviceNumber: updatedDeviceNumber
     }).exec();
 
@@ -292,8 +327,9 @@ async function updateInventoryItem(id: string, item: Partial<IInventoryItem>): P
         throw new Error("Inventory item already exists for this sheet and device number");
     }
 
-    return InventoryItemModel.findOneAndUpdate(
-        { _id: id, isDeleted: false },
+    // 🔹 עדכון בפועל
+    return InventoryItemModel.findByIdAndUpdate(
+        id,
         item,
         { new: true, runValidators: true }
     ).exec();
