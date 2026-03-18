@@ -62,7 +62,6 @@ async function getActiveAssignedInventoryItemForUserAndDevice(
     }).exec();
 }
 
-
 async function getDailyInventoryStatus(reportDate: string): Promise<any[]> {
     const items = await InventoryItemModel.find({
         isDeleted: false,
@@ -81,7 +80,8 @@ async function getDailyInventoryStatus(reportDate: string): Promise<any[]> {
                 }).lean().exec(),
 
                 DeviceModel.findOne({
-                    deviceNumber: item.deviceNumber
+                    deviceNumber: item.deviceNumber,
+                    isActive: true
                 }).lean().exec(),
 
                 UserModel.findOne({
@@ -99,31 +99,23 @@ async function getDailyInventoryStatus(reportDate: string): Promise<any[]> {
                 inventoryItemId: item._id,
                 deviceNumber: item.deviceNumber,
                 deviceName: device?.deviceName ?? null,
-
                 unit: item.unit,
-
-                // 👤 מי שחתום על המכשיר
                 assignedUser: {
                     personalNumber: item.assignedToUserId,
                     fullName: assignedUser?.fullName ?? null,
                     phone: assignedUser?.phone ?? null
                 },
-
-                // 👨‍💼 אחראי יחידה
                 unitResponsibleUser: {
                     personalNumber: item.unitResponsibleUserId,
                     fullName: unitResponsibleUser?.fullName ?? null,
                     phone: unitResponsibleUser?.phone ?? null
                 },
-
                 reportDate,
                 dailyReportStatus: report?.status ?? "not_reported",
                 reportId: report?._id ?? null,
-
                 lastReportDate: item.lastReportDate ?? null,
                 lastReportStatus: item.lastReportStatus ?? null,
                 lastReportedByUserId: item.lastReportedByUserId ?? null,
-
                 canManagerReport: true
             };
         })
@@ -131,7 +123,6 @@ async function getDailyInventoryStatus(reportDate: string): Promise<any[]> {
 
     return result;
 }
-
 
 async function getDailyInventoryStatusByUnitResponsibleUserId(
     unitResponsibleUserId: string,
@@ -155,7 +146,8 @@ async function getDailyInventoryStatusByUnitResponsibleUserId(
                 }).lean().exec(),
 
                 DeviceModel.findOne({
-                    deviceNumber: item.deviceNumber
+                    deviceNumber: item.deviceNumber,
+                    isActive: true
                 }).lean().exec(),
 
                 UserModel.findOne({
@@ -174,32 +166,30 @@ async function getDailyInventoryStatusByUnitResponsibleUserId(
                 deviceNumber: item.deviceNumber,
                 deviceName: device?.deviceName ?? null,
                 unit: item.unit,
-
                 assignedUser: {
                     personalNumber: item.assignedToUserId,
                     fullName: assignedUser?.fullName ?? null,
                     phone: assignedUser?.phone ?? null
                 },
-
                 unitResponsibleUser: {
                     personalNumber: item.unitResponsibleUserId,
                     fullName: unitResponsibleUser?.fullName ?? null,
                     phone: unitResponsibleUser?.phone ?? null
                 },
-
                 reportDate,
                 dailyReportStatus: report?.status ?? "not_reported",
                 reportId: report?._id ?? null,
-
                 lastReportDate: item.lastReportDate ?? null,
                 lastReportStatus: item.lastReportStatus ?? null,
-                lastReportedByUserId: item.lastReportedByUserId ?? null
+                lastReportedByUserId: item.lastReportedByUserId ?? null,
+                canUnitResponsibleReport: true
             };
         })
     );
 
     return result;
 }
+
 async function addInventoryItem(item: IInventoryItem): Promise<IInventoryItem> {
     const existingDevice = await DeviceModel.findOne({
         deviceNumber: item.deviceNumber,
@@ -207,7 +197,7 @@ async function addInventoryItem(item: IInventoryItem): Promise<IInventoryItem> {
     }).exec();
 
     if (!existingDevice) {
-        throw new ClientError(404,"Device number does not exist");
+        throw new ClientError(404, "Device number does not exist");
     }
 
     const responsibleUser = await UserModel.findOne({
@@ -216,7 +206,7 @@ async function addInventoryItem(item: IInventoryItem): Promise<IInventoryItem> {
     }).exec();
 
     if (!responsibleUser) {
-        throw new ClientError(404,"Unit responsible user does not exist");
+        throw new ClientError(404, "Unit responsible user does not exist");
     }
 
     if (item.status === "assigned") {
@@ -226,11 +216,11 @@ async function addInventoryItem(item: IInventoryItem): Promise<IInventoryItem> {
         }).exec();
 
         if (!assignedUser) {
-            throw new ClientError(404,"Assigned user does not exist");
+            throw new ClientError(404, "Assigned user does not exist");
         }
 
         if (!item.signedAt) {
-            throw new ClientError(400,"Signed date is required when item status is assigned");
+            throw new ClientError(400, "Signed date is required when item status is assigned");
         }
     }
 
@@ -245,7 +235,7 @@ async function addInventoryItem(item: IInventoryItem): Promise<IInventoryItem> {
     }).exec();
 
     if (existingSheetDevice) {
-        throw new ClientError(400,"Inventory item already exists for this sheet and device number");
+        throw new ClientError(400, "Inventory item already exists for this sheet and device number");
     }
 
     return InventoryItemModel.create(item);
@@ -255,7 +245,6 @@ async function updateInventoryItem(
     id: string,
     item: Partial<IInventoryItem>
 ): Promise<IInventoryItem | null> {
-
     const currentItem = await InventoryItemModel.findById(id).exec();
 
     if (!currentItem) {
@@ -269,7 +258,7 @@ async function updateInventoryItem(
         }).exec();
 
         if (!existingDevice) {
-            throw new ClientError(404,"Device number does not exist");
+            throw new ClientError(404, "Device number does not exist");
         }
     }
 
@@ -280,21 +269,18 @@ async function updateInventoryItem(
         }).exec();
 
         if (!responsibleUser) {
-            throw new ClientError(404,"Unit responsible user does not exist");
+            throw new ClientError(404, "Unit responsible user does not exist");
         }
     }
 
     const updatedStatus = item.status ?? currentItem.status;
 
     if (updatedStatus === "assigned") {
-        const assignedUserId =
-            item.assignedToUserId ?? currentItem.assignedToUserId;
-
-        const signedAt =
-            item.signedAt ?? currentItem.signedAt;
+        const assignedUserId = item.assignedToUserId ?? currentItem.assignedToUserId;
+        const signedAt = item.signedAt ?? currentItem.signedAt;
 
         if (!assignedUserId) {
-            throw new ClientError(400,"Assigned user ID is required when status is assigned");
+            throw new ClientError(400, "Assigned user ID is required when status is assigned");
         }
 
         const assignedUser = await UserModel.findOne({
@@ -303,11 +289,11 @@ async function updateInventoryItem(
         }).exec();
 
         if (!assignedUser) {
-            throw new ClientError(404,"Assigned user does not exist");
+            throw new ClientError(404, "Assigned user does not exist");
         }
 
         if (!signedAt) {
-            throw new ClientError(400,"Signed date is required when status is assigned");
+            throw new ClientError(400, "Signed date is required when status is assigned");
         }
     }
 
@@ -325,10 +311,9 @@ async function updateInventoryItem(
     }).exec();
 
     if (duplicateItem) {
-        throw new ClientError(400,"Inventory item already exists for this sheet and device number");
+        throw new ClientError(400, "Inventory item already exists for this sheet and device number");
     }
 
-    // 🔹 עדכון בפועל
     return InventoryItemModel.findByIdAndUpdate(
         id,
         item,
@@ -337,7 +322,10 @@ async function updateInventoryItem(
 }
 
 async function returnInventoryItem(id: string, returnedAt?: Date): Promise<IInventoryItem | null> {
-    const currentItem = await InventoryItemModel.findOne({ _id: id, isDeleted: false }).exec();
+    const currentItem = await InventoryItemModel.findOne({
+        _id: id,
+        isDeleted: false
+    }).exec();
 
     if (!currentItem) {
         return null;
