@@ -32,7 +32,7 @@ const DeviceSchema = new Schema<IDevice>(
     },
     {
         versionKey: false,
-        collection: "devices",
+        collection: "Devices",
         timestamps: true
     }
 );
