@@ -4,6 +4,7 @@ import InventoryItemModel from "../4-models/inventory-item-model";
 import UserModel from "../4-models/user-model";
 import DeviceModel from "../4-models/device-model";
 import ReportModel from "../4-models/report-model";
+import ClientError from "../2-utils/client-error";
 
 type ReportDailyDeviceData = {
     personalNumber: string;
@@ -21,7 +22,7 @@ async function createDailySheetFromInventorySheet(
     const sheet = await InventorySheetModel.findById(sheetId).exec();
 
     if (!sheet) {
-        throw new Error("Inventory sheet not found");
+        throw new ClientError(404,"Inventory sheet not found");
     }
 
     const existingReports = await DailyReportModel.find({
@@ -30,7 +31,7 @@ async function createDailySheetFromInventorySheet(
     }).exec();
 
     if (existingReports.length > 0) {
-        throw new Error("Daily sheet already exists for this date");
+        throw new ClientError(404,"Daily sheet already exists for this date");
     }
 
     const items = await InventoryItemModel.find({
@@ -40,7 +41,7 @@ async function createDailySheetFromInventorySheet(
     }).lean().exec();
 
     if (items.length === 0) {
-        throw new Error("No inventory items found for this sheet");
+        throw new ClientError(404,"No inventory items found for this sheet");
     }
 
     const dailyDocs = items.map(item => ({
@@ -84,7 +85,7 @@ async function reportDevice(data: ReportDailyDeviceData): Promise<IDailyReport> 
     }).exec();
 
     if (!user) {
-        throw new Error("User identification failed");
+        throw new ClientError(400,"User identification failed");
     }
 
     const device = await DeviceModel.findOne({
@@ -93,7 +94,7 @@ async function reportDevice(data: ReportDailyDeviceData): Promise<IDailyReport> 
     }).exec();
 
     if (!device) {
-        throw new Error("Device not found");
+        throw new ClientError(404,"Device not found");
     }
 
     const dailyReport = await DailyReportModel.findOne({
@@ -102,7 +103,7 @@ async function reportDevice(data: ReportDailyDeviceData): Promise<IDailyReport> 
     }).exec();
 
     if (!dailyReport) {
-        throw new Error("Daily report not found");
+        throw new ClientError(404,"Daily report not found");
     }
 
     const inventoryItem = await InventoryItemModel.findOne({
@@ -113,7 +114,7 @@ async function reportDevice(data: ReportDailyDeviceData): Promise<IDailyReport> 
     }).exec();
 
     if (!inventoryItem) {
-        throw new Error("Inventory item not found for this device");
+        throw new ClientError(404,"Inventory item not found for this device");
     }
 
     const isAdmin = user.role === "admin";
@@ -124,11 +125,11 @@ async function reportDevice(data: ReportDailyDeviceData): Promise<IDailyReport> 
         inventoryItem.unitResponsibleUserId === data.personalNumber;
 
     if (!isAdmin && !isAssignedUser && !isUnitResponsible) {
-        throw new Error("User is not allowed to report for this device");
+        throw new ClientError(403,"User is not allowed to report for this device");
     }
 
     if (dailyReport.status === "reported") {
-        throw new Error("Device already reported for this date");
+        throw new ClientError(400,"Device already reported for this date");
     }
 
     dailyReport.status = "reported";

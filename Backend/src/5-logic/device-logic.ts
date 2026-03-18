@@ -1,3 +1,4 @@
+import ClientError from "../2-utils/client-error";
 import DeviceModel, { IDevice } from "../4-models/device-model";
 
 class DeviceLogic {
@@ -25,7 +26,7 @@ class DeviceLogic {
     }).exec();
 
     if (existingDevice) {
-      throw new Error("Device number already exists");
+      throw new ClientError(404,"Device number already exists");
     }
 
     const newDevice = new DeviceModel(device);
@@ -43,7 +44,7 @@ class DeviceLogic {
       }).exec();
 
       if (existingDevice) {
-        throw new Error("Device number already exists");
+        throw new ClientError(404,"Device number already exists");
       }
     }
 
