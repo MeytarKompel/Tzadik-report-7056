@@ -11,6 +11,7 @@ import userController from "./6-controllers/user-controller";
 import reportController from "./6-controllers/report-controller";
 import inventoryItemController from "./6-controllers/inventory-item-controller";
 import inventorySheetController from "./6-controllers/inventory-sheet-controller";
+import dailyReportController from "./6-controllers/daily-report-controller";
 
 const server = express();
 
@@ -21,6 +22,7 @@ server.use("/api", userController);
 server.use("/api", reportController);
 server.use("/api", inventoryItemController);
 server.use("/api", inventorySheetController);
+server.use("/api", dailyReportController);
 server.use("*", routeNotFound);
 server.use(catchAll);
 
