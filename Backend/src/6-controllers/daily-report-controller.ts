@@ -18,15 +18,7 @@ router.post("/daily-reports/create", async (req: Request, res: Response, next: N
             count: created.length,
             dailyReports: created
         });
-    } catch (err: any) {
-        if (
-            err.message === "Inventory sheet not found" ||
-            err.message === "Daily sheet already exists for this date" ||
-            err.message === "No inventory items found for this sheet"
-        ) {
-            return res.status(400).json({ message: err.message });
-        }
-
+    } catch (err) {
         next(err);
     }
 });
@@ -59,18 +51,7 @@ router.post("/daily-reports/report", async (req: Request, res: Response, next: N
     try {
         const report = await dailyReportLogic.reportDevice(req.body);
         res.json(report);
-    } catch (err: any) {
-        if (
-            err.message === "User identification failed" ||
-            err.message === "Device not found" ||
-            err.message === "Daily report not found" ||
-            err.message === "Inventory item not found for this device" ||
-            err.message === "User is not allowed to report for this device" ||
-            err.message === "Device already reported for this date"
-        ) {
-            return res.status(400).json({ message: err.message });
-        }
-
+    } catch (err) {
         next(err);
     }
 });
