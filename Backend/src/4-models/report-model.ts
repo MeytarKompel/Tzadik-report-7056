@@ -66,7 +66,7 @@ const ReportSchema = new Schema<IReport>(
     },
     {
         versionKey: false,
-        collection: "daily_reports"
+        collection: "reports"
     }
 );
 
