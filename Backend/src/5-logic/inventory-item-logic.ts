@@ -2,6 +2,7 @@ import InventoryItemModel, { IInventoryItem } from "../4-models/inventory-item-m
 import UserModel from "../4-models/user-model";
 import DeviceModel from "../4-models/device-model";
 import ReportModel from "../4-models/report-model";
+import ClientError from "../2-utils/client-error";
 
 async function getAllInventoryItems(): Promise<IInventoryItem[]> {
     return InventoryItemModel.find({ isDeleted: false })
@@ -206,7 +207,7 @@ async function addInventoryItem(item: IInventoryItem): Promise<IInventoryItem> {
     }).exec();
 
     if (!existingDevice) {
-        throw new Error("Device number does not exist");
+        throw new ClientError(404,"Device number does not exist");
     }
 
     const responsibleUser = await UserModel.findOne({
@@ -215,7 +216,7 @@ async function addInventoryItem(item: IInventoryItem): Promise<IInventoryItem> {
     }).exec();
 
     if (!responsibleUser) {
-        throw new Error("Unit responsible user does not exist");
+        throw new ClientError(404,"Unit responsible user does not exist");
     }
 
     if (item.status === "assigned") {
@@ -225,11 +226,11 @@ async function addInventoryItem(item: IInventoryItem): Promise<IInventoryItem> {
         }).exec();
 
         if (!assignedUser) {
-            throw new Error("Assigned user does not exist");
+            throw new ClientError(404,"Assigned user does not exist");
         }
 
         if (!item.signedAt) {
-            throw new Error("Signed date is required when item status is assigned");
+            throw new ClientError(400,"Signed date is required when item status is assigned");
         }
     }
 
@@ -244,7 +245,7 @@ async function addInventoryItem(item: IInventoryItem): Promise<IInventoryItem> {
     }).exec();
 
     if (existingSheetDevice) {
-        throw new Error("Inventory item already exists for this sheet and device number");
+        throw new ClientError(400,"Inventory item already exists for this sheet and device number");
     }
 
     return InventoryItemModel.create(item);
@@ -268,7 +269,7 @@ async function updateInventoryItem(
         }).exec();
 
         if (!existingDevice) {
-            throw new Error("Device number does not exist");
+            throw new ClientError(404,"Device number does not exist");
         }
     }
 
@@ -279,7 +280,7 @@ async function updateInventoryItem(
         }).exec();
 
         if (!responsibleUser) {
-            throw new Error("Unit responsible user does not exist");
+            throw new ClientError(404,"Unit responsible user does not exist");
         }
     }
 
@@ -293,7 +294,7 @@ async function updateInventoryItem(
             item.signedAt ?? currentItem.signedAt;
 
         if (!assignedUserId) {
-            throw new Error("Assigned user ID is required when status is assigned");
+            throw new ClientError(400,"Assigned user ID is required when status is assigned");
         }
 
         const assignedUser = await UserModel.findOne({
@@ -302,11 +303,11 @@ async function updateInventoryItem(
         }).exec();
 
         if (!assignedUser) {
-            throw new Error("Assigned user does not exist");
+            throw new ClientError(404,"Assigned user does not exist");
         }
 
         if (!signedAt) {
-            throw new Error("Signed date is required when status is assigned");
+            throw new ClientError(400,"Signed date is required when status is assigned");
         }
     }
 
@@ -324,7 +325,7 @@ async function updateInventoryItem(
     }).exec();
 
     if (duplicateItem) {
-        throw new Error("Inventory item already exists for this sheet and device number");
+        throw new ClientError(400,"Inventory item already exists for this sheet and device number");
     }
 
     // 🔹 עדכון בפועל
