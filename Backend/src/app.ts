@@ -12,11 +12,13 @@ import reportController from "./6-controllers/report-controller";
 import inventoryItemController from "./6-controllers/inventory-item-controller";
 import inventorySheetController from "./6-controllers/inventory-sheet-controller";
 import dailyReportController from "./6-controllers/daily-report-controller";
+import errorsMiddleware from "./3-middleware/errors-middleware";
 
 const server = express();
 
 server.use(cors());
 server.use(express.json());
+server.use(errorsMiddleware.catchAll);
 server.use("/api", deviceController);
 server.use("/api", userController);
 server.use("/api", reportController);
