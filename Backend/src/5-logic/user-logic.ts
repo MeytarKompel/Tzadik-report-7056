@@ -2,7 +2,9 @@ import ClientError from "../2-utils/client-error";
 import UserModel, { IUser } from "../4-models/user-model";
 
 async function getAllUsers(): Promise<IUser[]> {
-    return UserModel.find().sort({ createdAt: -1 }).exec();
+    return UserModel.find()
+        .sort({ createdAt: -1 })
+        .exec();
 }
 
 async function getUserByPersonalNumber(personalNumber: string): Promise<IUser | null> {
@@ -10,19 +12,27 @@ async function getUserByPersonalNumber(personalNumber: string): Promise<IUser | 
 }
 
 async function getUsersByUnit(unit: string): Promise<IUser[]> {
-    return UserModel.find({ unit }).sort({ createdAt: -1 }).exec();
+    return UserModel.find({ unit })
+        .sort({ createdAt: -1 })
+        .exec();
 }
 
 async function getUsersByRole(role: string): Promise<IUser[]> {
-    return UserModel.find({ role }).sort({ createdAt: -1 }).exec();
+    return UserModel.find({ role })
+        .sort({ createdAt: -1 })
+        .exec();
 }
 
-async function identifyUserForReport(personalNumber: string, phone: string): Promise<IUser | null> {
+async function identifyUserForReport(
+    personalNumber: string,
+    phone: string
+): Promise<IUser | null> {
     const normalizedPhone = phone.replace(/\D/g, "");
-    
+
     return UserModel.findOne({
         personalNumber,
         phone: normalizedPhone,
+        isActive: true
     }).exec();
 }
 
@@ -34,7 +44,7 @@ async function addUser(user: IUser): Promise<IUser> {
     }).exec();
 
     if (existingPersonalNumber) {
-        throw new ClientError(400,"Personal number already exists");
+        throw new ClientError(400, "Personal number already exists");
     }
 
     const existingUserIdentification = await UserModel.findOne({
@@ -43,13 +53,16 @@ async function addUser(user: IUser): Promise<IUser> {
     }).exec();
 
     if (existingUserIdentification) {
-        throw new ClientError(400,"User identification already exists");
+        throw new ClientError(400, "User identification already exists");
     }
 
     return UserModel.create(user);
 }
 
-async function updateUser(personalNumber: string, user: Partial<IUser>): Promise<IUser | null> {
+async function updateUser(
+    personalNumber: string,
+    user: Partial<IUser>
+): Promise<IUser | null> {
     if (user.phone) {
         user.phone = user.phone.replace(/\D/g, "");
     }
@@ -67,7 +80,7 @@ async function updateUser(personalNumber: string, user: Partial<IUser>): Promise
         }).exec();
 
         if (existingPersonalNumber) {
-            throw new ClientError(400,"Personal number already exists");
+            throw new ClientError(400, "Personal number already exists");
         }
     }
 
@@ -81,7 +94,7 @@ async function updateUser(personalNumber: string, user: Partial<IUser>): Promise
     }).exec();
 
     if (existingUserIdentification) {
-        throw new ClientError(400,"User identification already exists");
+        throw new ClientError(400, "User identification already exists");
     }
 
     return UserModel.findOneAndUpdate(
