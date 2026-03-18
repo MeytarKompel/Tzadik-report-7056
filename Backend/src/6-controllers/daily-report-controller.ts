@@ -34,4 +34,13 @@ router.post("/daily-reports/report", async (req, res, next) => {
     }
 });
 
+router.get("/daily-reports/by-date/:reportDate", async (req, res, next) => {
+    try {
+        const reports = await dailyReportLogic.getDailyReportsByDate(req.params.reportDate);
+        res.json(reports);
+    } catch (err) {
+        next(err);
+    }
+});
+
 export default router;

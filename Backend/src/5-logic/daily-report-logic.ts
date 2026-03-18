@@ -58,8 +58,12 @@ async function reportDevice(
 
     return report;
 }
+async function getDailyReportsByDate(reportDate: string) {
+    return DailyReportModel.find({ reportDate }).sort({ createdAt: -1 }).exec();
+}
 
 export default {
     createDailySheetFromInventorySheet,
-    reportDevice
+    reportDevice,
+    getDailyReportsByDate
 };
