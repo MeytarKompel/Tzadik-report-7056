@@ -61,6 +61,23 @@ router.post("/inventory-sheets/:id/items", async (req: Request, res: Response, n
     }
 });
 
+router.get("/inventory-sheets/:id/full", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const sheet = await inventorySheetLogic.getInventorySheetFull(
+            req.params.id,
+            req.query.reportDate as string | undefined
+        );
+
+        if (!sheet) {
+            return res.status(404).json({ message: "Inventory sheet not found" });
+        }
+
+        res.json(sheet);
+    } catch (err) {
+        next(err);
+    }
+});
+
 // GET BY ID
 router.get("/inventory-sheets/:id", async (req: Request, res: Response, next: NextFunction) => {
     try {
