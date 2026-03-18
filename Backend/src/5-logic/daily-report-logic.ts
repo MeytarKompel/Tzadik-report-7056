@@ -1,6 +1,6 @@
-import InventoryItemModel from "../4-models/inventory-item-model";
 import DailyReportModel from "../4-models/daily-report-model";
 
+// יצירת גיליון יומי
 async function createDailySheetFromInventorySheet(
     sheetId: string,
     reportDate: string
@@ -15,6 +15,8 @@ async function createDailySheetFromInventorySheet(
         throw new Error("Daily sheet already exists for this date");
     }
 
+    const InventoryItemModel = (await import("../4-models/inventory-item-model")).default;
+
     const items = await InventoryItemModel.find({
         sheetId,
         status: "assigned",
@@ -25,13 +27,39 @@ async function createDailySheetFromInventorySheet(
         sheetId,
         deviceNumber: item.deviceNumber,
         reportDate,
-
         unit: item.unit,
         assignedToUserId: item.assignedToUserId,
         unitResponsibleUserId: item.unitResponsibleUserId,
-
         status: "not_reported"
     }));
 
     await DailyReportModel.insertMany(dailyDocs);
 }
+
+async function reportDevice(
+    deviceNumber: string,
+    reportDate: string,
+    userId: string,
+    location?: string
+) {
+    const report = await DailyReportModel.findOneAndUpdate(
+        { deviceNumber, reportDate },
+        {
+            status: "reported",
+            reportedBy: userId,
+            location
+        },
+        { new: true }
+    );
+
+    if (!report) {
+        throw new Error("Daily report not found");
+    }
+
+    return report;
+}
+
+export default {
+    createDailySheetFromInventorySheet,
+    reportDevice
+};
