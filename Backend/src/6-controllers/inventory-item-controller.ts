@@ -23,6 +23,7 @@ router.get("/inventory-items", async (req: Request, res: Response, next: NextFun
     }
 });
 
+// GET DAILY STATUS FOR UNIT RESPONSIBLE USER
 router.get(
     "/inventory-items/unit-responsible/daily-status/:unitResponsibleUserId/:reportDate",
     async (req: Request, res: Response, next: NextFunction) => {
@@ -38,21 +39,6 @@ router.get(
         }
     }
 );
-
-// GET BY ID
-router.get("/inventory-items/:id", async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const item = await inventoryItemLogic.getInventoryItemById(req.params.id);
-
-        if (!item) {
-            return res.status(404).json({ message: "Inventory item not found" });
-        }
-
-        res.json(item);
-    } catch (err) {
-        next(err);
-    }
-});
 
 // GET BY SHEET ID
 router.get("/inventory-items/by-sheet/:sheetId", async (req: Request, res: Response, next: NextFunction) => {
@@ -114,21 +100,27 @@ router.get("/inventory-items/by-status/:status", async (req: Request, res: Respo
     }
 });
 
+// GET BY ID
+router.get("/inventory-items/:id", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const item = await inventoryItemLogic.getInventoryItemById(req.params.id);
+
+        if (!item) {
+            return res.status(404).json({ message: "Inventory item not found" });
+        }
+
+        res.json(item);
+    } catch (err) {
+        next(err);
+    }
+});
+
 // CREATE
 router.post("/inventory-items", async (req: Request, res: Response, next: NextFunction) => {
     try {
         const item = await inventoryItemLogic.addInventoryItem(req.body);
         res.status(201).json(item);
-    } catch (err: any) {
-        if (
-            err.message === "Device number does not exist" ||
-            err.message === "Assigned user does not exist" ||
-            err.message === "Unit responsible user does not exist" ||
-            err.message === "Inventory item already exists for this sheet and device number"
-        ) {
-            return res.status(400).json({ message: err.message });
-        }
-
+    } catch (err) {
         next(err);
     }
 });
@@ -143,16 +135,7 @@ router.put("/inventory-items/:id", async (req: Request, res: Response, next: Nex
         }
 
         res.json(item);
-    } catch (err: any) {
-        if (
-            err.message === "Device number does not exist" ||
-            err.message === "Assigned user does not exist" ||
-            err.message === "Unit responsible user does not exist" ||
-            err.message === "Inventory item already exists for this sheet and device number"
-        ) {
-            return res.status(400).json({ message: err.message });
-        }
-
+    } catch (err) {
         next(err);
     }
 });
