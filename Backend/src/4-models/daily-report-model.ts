@@ -3,6 +3,7 @@ import { Document, Schema, model } from "mongoose";
 export type DailyReportStatus = "reported" | "not_reported";
 
 export interface IDailyReport extends Document {
+    inventoryItemId: string;
     sheetId: string;
     deviceNumber: string;
     reportDate: string;
@@ -19,6 +20,11 @@ export interface IDailyReport extends Document {
 
 const DailyReportSchema = new Schema<IDailyReport>(
     {
+        inventoryItemId: {
+            type: String,
+            required: [true, "Inventory item ID is required"],
+            trim: true
+        },
         sheetId: {
             type: String,
             required: [true, "Sheet ID is required"],
@@ -85,9 +91,16 @@ const DailyReportSchema = new Schema<IDailyReport>(
     }
 );
 
+// אינדקסים
 DailyReportSchema.index({ sheetId: 1 });
 DailyReportSchema.index({ reportDate: 1 });
-DailyReportSchema.index({ deviceNumber: 1, reportDate: 1 }, { unique: true });
+
+// האינדקס הנכון!
+DailyReportSchema.index(
+    { inventoryItemId: 1, reportDate: 1 },
+    { unique: true }
+);
+
 DailyReportSchema.index({ unitResponsibleUserId: 1 });
 DailyReportSchema.index({ assignedToUserId: 1 });
 DailyReportSchema.index({ status: 1 });

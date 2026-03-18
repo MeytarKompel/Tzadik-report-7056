@@ -45,6 +45,7 @@ async function createDailySheetFromInventorySheet(
     }
 
     const dailyDocs = items.map(item => ({
+        inventoryItemId: item._id,
         sheetId,
         deviceNumber: item.deviceNumber,
         reportDate,
@@ -107,6 +108,7 @@ async function reportDevice(data: ReportDailyDeviceData): Promise<IDailyReport> 
     }
 
     const inventoryItem = await InventoryItemModel.findOne({
+        _id: dailyReport.inventoryItemId,
         sheetId: dailyReport.sheetId,
         deviceNumber: data.deviceNumber,
         isDeleted: false,
@@ -190,6 +192,7 @@ async function markDeviceAsNotReported(
 
     await InventoryItemModel.updateOne(
         {
+            _id: dailyReport.inventoryItemId,
             sheetId: dailyReport.sheetId,
             deviceNumber: dailyReport.deviceNumber,
             isDeleted: false
