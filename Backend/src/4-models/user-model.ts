@@ -1,6 +1,6 @@
 import { Document, Schema, model } from "mongoose";
 
-export type UserRole = "regular" | "unit_equipment_manager" | "admin";
+export type UserRole = "regular" | "mashkash" | "admin";
 
 export interface IUser extends Document {
   personalNumber: string;
@@ -38,7 +38,7 @@ const UserSchema = new Schema<IUser>(
       type: String,
       required: [true, "Role is required"],
       enum: {
-        values: ["regular", "unit_equipment_manager", "admin"],
+        values: ["regular", "mashkash", "admin"],
         message: "Invalid user role",
       },
       default: "regular",

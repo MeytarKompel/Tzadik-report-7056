@@ -120,7 +120,7 @@ async function reportDevice(data: ReportDailyDeviceData): Promise<IDailyReport> 
     const isAdmin = user.role === "admin";
     const isAssignedUser = inventoryItem.assignedToUserId === data.personalNumber;
     const isUnitResponsible =
-        user.role === "unit_equipment_manager" &&
+        user.role === "mashkash" &&
         inventoryItem.unitResponsibleUserId === data.personalNumber;
 
     if (!isAdmin && !isAssignedUser && !isUnitResponsible) {
