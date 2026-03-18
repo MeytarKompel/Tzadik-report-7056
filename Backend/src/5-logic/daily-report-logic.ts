@@ -37,7 +37,7 @@ async function createDailySheetFromInventorySheet(
     const items = await InventoryItemModel.find({
         sheetId,
         isDeleted: false,
-        status: { $in: ["assigned", "in_warehouse"] }
+        status: { $in: ["assigned", "not_assigned"] }
     }).lean().exec();
 
     if (items.length === 0) {
@@ -110,7 +110,7 @@ async function reportDevice(data: ReportDailyDeviceData): Promise<IDailyReport> 
         sheetId: dailyReport.sheetId,
         deviceNumber: data.deviceNumber,
         isDeleted: false,
-        status: { $in: ["assigned", "in_warehouse"] }
+        status: { $in: ["assigned", "not_assigned"] }
     }).exec();
 
     if (!inventoryItem) {
