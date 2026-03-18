@@ -70,14 +70,7 @@ router.post("/users", async (req: Request, res: Response, next: NextFunction) =>
     try {
         const user = await userLogic.addUser(req.body);
         res.status(201).json(user);
-    } catch (err: any) {
-        if (
-            err.message === "Personal number already exists" ||
-            err.message === "User identification already exists"
-        ) {
-            return res.status(400).json({ message: err.message });
-        }
-
+    } catch (err) {
         next(err);
     }
 });
@@ -95,14 +88,7 @@ router.put("/users/:personalNumber", async (req: Request, res: Response, next: N
         }
 
         res.json(updatedUser);
-    } catch (err: any) {
-        if (
-            err.message === "Personal number already exists" ||
-            err.message === "User identification already exists"
-        ) {
-            return res.status(400).json({ message: err.message });
-        }
-
+    } catch (err) {
         next(err);
     }
 });
