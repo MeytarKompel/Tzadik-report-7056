@@ -60,8 +60,43 @@ class DeviceLogic {
         ).exec();
     }
 
+    public async updateDeviceByNumber(
+        deviceNumber: string,
+        device: Partial<IDevice>
+    ): Promise<IDevice | null> {
+        const currentDevice = await DeviceModel.findOne({ deviceNumber }).exec();
+
+        if (!currentDevice) {
+            return null;
+        }
+
+        if (device.deviceNumber && device.deviceNumber !== deviceNumber) {
+            const existingDevice = await DeviceModel.findOne({
+                deviceNumber: device.deviceNumber,
+                _id: { $ne: currentDevice._id }
+            }).exec();
+
+            if (existingDevice) {
+                throw new ClientError(400, "Device number already exists");
+            }
+        }
+
+        return DeviceModel.findOneAndUpdate(
+            { deviceNumber },
+            device,
+            {
+                new: true,
+                runValidators: true
+            }
+        ).exec();
+    }
+
     public async deleteDeviceByMongoId(id: string): Promise<IDevice | null> {
         return DeviceModel.findByIdAndDelete(id).exec();
+    }
+
+    public async deleteDeviceByNumber(deviceNumber: string): Promise<IDevice | null> {
+        return DeviceModel.findOneAndDelete({ deviceNumber }).exec();
     }
 }
 
