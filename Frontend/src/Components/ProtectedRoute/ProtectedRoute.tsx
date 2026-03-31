@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 function ProtectedRoute(props: ProtectedRouteProps): JSX.Element {
     const user = authService.getUser();
 
-    if (!user) {
+    if (!user || !authService.hasAccessSession()) {
         return <Navigate to="/" replace />;
     }
 
