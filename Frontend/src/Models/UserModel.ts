@@ -1,6 +1,7 @@
 class UserModel{
     public personalNumber: string= "";
-    public phoneNumber: string= "";
+    public phone: string= "";
+    public fullName: string = "";
     public role: "regular" | "mashkash" | "admin" = "regular";
     public unit : string = "";
 

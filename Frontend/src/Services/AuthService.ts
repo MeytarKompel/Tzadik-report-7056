@@ -1,15 +1,12 @@
 import axios from "axios";
-import AuthResponseModel from "../Models/AuthResponseModel";
 import CredentialsModel from "../Models/CredentialsModel";
-
+import UserModel from "../Models/UserModel";
 
 class AuthService {
-    public async login(credentials: CredentialsModel): Promise<AuthResponseModel> {
-        const response = await axios.post<AuthResponseModel>(
-            "http://localhost:3001/api/auth/login",
-            credentials
-        );
+    private identifyUrl = "http://localhost:3001/api/users/identify";
 
+    public async identify(credentials: CredentialsModel): Promise<UserModel> {
+        const response = await axios.post<UserModel>(this.identifyUrl, credentials);
         return response.data;
     }
 }
