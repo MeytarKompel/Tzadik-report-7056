@@ -1,0 +1,28 @@
+.admin-summary-card {
+    background-color: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.admin-summary-card h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+    color: #374151;
+}
+
+.admin-summary-value {
+    font-size: 34px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.admin-summary-subtitle {
+    margin: 10px 0 0;
+    color: #6b7280;
+    font-size: 14px;
+}
