@@ -1,7 +1,25 @@
+import { useState } from "react";
 import "./AdminDashboardPage.css";
 import AdminSummaryCard from "../../Components/AdminSummaryCard/AdminSummaryCard";
+import AddDeviceDialog from "../../Components/AddDeviceDialog/AddDeviceDialog";
+import DeviceModel from "../../Models/DeviceModel";
 
 function AdminDashboardPage(): JSX.Element {
+    const [isAddDeviceDialogOpen, setIsAddDeviceDialogOpen] = useState<boolean>(false);
+
+    function openAddDeviceDialog(): void {
+        setIsAddDeviceDialogOpen(true);
+    }
+
+    function closeAddDeviceDialog(): void {
+        setIsAddDeviceDialogOpen(false);
+    }
+
+    function saveDevice(device: DeviceModel): void {
+        console.log("Device to save:", device);
+        setIsAddDeviceDialogOpen(false);
+    }
+
     return (
         <div className="admin-dashboard">
             <div className="admin-dashboard-header">
@@ -12,29 +30,10 @@ function AdminDashboardPage(): JSX.Element {
             </div>
 
             <section className="admin-summary-grid">
-                <AdminSummaryCard
-                    title="סה״כ מכשירים"
-                    value={248}
-                    subtitle="כלל המכשירים במערכת"
-                />
-
-                <AdminSummaryCard
-                    title="דווחו היום"
-                    value={173}
-                    subtitle="מכשירים שסומנו כדווחו"
-                />
-
-                <AdminSummaryCard
-                    title="לא דווחו היום"
-                    value={75}
-                    subtitle="מכשירים שדורשים מעקב"
-                />
-
-                <AdminSummaryCard
-                    title="משתמשים"
-                    value={96}
-                    subtitle="סה״כ משתמשים רשומים"
-                />
+                <AdminSummaryCard title="סה״כ מכשירים" value={248} subtitle="כלל המכשירים במערכת" />
+                <AdminSummaryCard title="דווחו היום" value={173} subtitle="מכשירים שסומנו כדווחו" />
+                <AdminSummaryCard title="לא דווחו היום" value={75} subtitle="מכשירים שדורשים מעקב" />
+                <AdminSummaryCard title="משתמשים" value={96} subtitle="סה״כ משתמשים רשומים" />
             </section>
 
             <section className="admin-sections-grid">
@@ -42,9 +41,11 @@ function AdminDashboardPage(): JSX.Element {
                     <h2>פעולות מהירות</h2>
 
                     <div className="admin-actions">
+                        <button type="button" onClick={openAddDeviceDialog}>
+                            הוספת מכשיר חדש
+                        </button>
                         <button type="button">פתיחת גיליון מלאי חדש</button>
                         <button type="button">יצירת דיווח יומי</button>
-                        <button type="button">צפייה בכל המכשירים</button>
                         <button type="button">מעקב אחרי לא דווח</button>
                     </div>
                 </div>
@@ -90,7 +91,7 @@ function AdminDashboardPage(): JSX.Element {
                             </tr>
                             <tr>
                                 <td>100236</td>
-                                <td>נועם פרץ</td>
+                                <td>לא משויך</td>
                                 <td>מחסן</td>
                                 <td>מנהל מערכת</td>
                                 <td>לא דווח</td>
@@ -99,6 +100,12 @@ function AdminDashboardPage(): JSX.Element {
                     </table>
                 </div>
             </section>
+
+            <AddDeviceDialog
+                open={isAddDeviceDialogOpen}
+                onClose={closeAddDeviceDialog}
+                onSave={saveDevice}
+            />
         </div>
     );
 }

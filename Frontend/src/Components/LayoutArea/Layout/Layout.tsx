@@ -16,7 +16,7 @@ function Layout(): JSX.Element {
         <div className="layout">
             <header className="layout-header">
                 <div className="layout-top">
-                    <h2>מערכת ניהול מלאי</h2>
+                    <h2>דוח צ׳</h2>
 
                     <div className="user-section">
                         <span>
