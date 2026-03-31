@@ -2,8 +2,9 @@ import "./AdminDashboardPage.css";
 
 function AdminDashboardPage(): JSX.Element {
     return (
-        <div className="AdminDashboardPage">
-			
+        <div>
+            <h1>מסך מנהל מערכת</h1>
+            <p>כאן יוצגו כל נתוני המערכת והניהול הכללי.</p>
         </div>
     );
 }
