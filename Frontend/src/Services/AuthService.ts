@@ -9,9 +9,7 @@ class AuthService {
     public async identify(credentials: CredentialsModel): Promise<UserModel> {
         const response = await axios.post<UserModel>(this.identifyUrl, credentials);
         const user = response.data;
-
         this.saveUser(user);
-
         return user;
     }
 
@@ -32,6 +30,11 @@ class AuthService {
 
     public logout(): void {
         localStorage.removeItem(this.storageKey);
+    }
+
+    public getRole(): string | null {
+        const user = this.getUser();
+        return user ? user.role : null;
     }
 }
 

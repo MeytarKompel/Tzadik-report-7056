@@ -6,21 +6,43 @@ import LoginPage from "../../LoginPage/LoginPage";
 import AdminDashboardPage from "../../AdminDashboardPage/AdminDashboardPage";
 import MashkashDashboardPage from "../../MashkashDashboardPage/MashkashDashboardPage";
 import ReportPage from "../../ReportPage/ReportPage";
+import ProtectedRoute from "../../ProtectedRoute/ProtectedRoute";
 
 function Routing(): JSX.Element {
-    return (
-        <div className="Routing">
-            <Routes>
-                <Route path="/home" element={<Home />} />
-                <Route path="/" element={<Navigate to="/home" />} />
-                <Route path="*" element={<PageNotFound />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/admin-dashboard" element={<AdminDashboardPage />} />
-                <Route path="/mashkash-dashboard" element={<MashkashDashboardPage />} />
-                <Route path="/report" element={<ReportPage />} />
-            </Routes>
-        </div>
-    );
+  return (
+    <div className="Routing">
+      <Routes>
+        <Route path="/home" element={<Home />} />
+        <Route path="/" element={<Navigate to="/home" />} />
+        <Route path="*" element={<PageNotFound />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/admin-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mashkash-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["mashkash", "admin"]}>
+              <MashkashDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/report"
+          element={
+            <ProtectedRoute allowedRoles={["regular", "mashkash", "admin"]}>
+              <ReportPage />
+            </ProtectedRoute>
+          }
+        />{" "}
+      </Routes>
+    </div>
+  );
 }
 
 export default Routing;

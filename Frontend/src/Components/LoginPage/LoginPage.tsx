@@ -3,12 +3,10 @@ import { useNavigate } from "react-router-dom";
 import Alert from "@mui/material/Alert";
 import "./LoginPage.css";
 import CredentialsModel from "../../Models/CredentialsModel";
-import UserModel from "../../Models/UserModel";
 import authService from "../../Services/AuthService";
 
 function LoginPage(): JSX.Element {
     const [credentials, setCredentials] = useState<CredentialsModel>(new CredentialsModel());
-    const [identifiedUser, setIdentifiedUser] = useState<UserModel | null>(null);
     const [error, setError] = useState<string>("");
     const [successMessage, setSuccessMessage] = useState<string>("");
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -16,11 +14,9 @@ function LoginPage(): JSX.Element {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const existingUser = authService.getUser();
-
-        if (existingUser) {
-            setIdentifiedUser(existingUser);
-            navigate(getRouteByRole(existingUser.role));
+        const user = authService.getUser();
+        if (user) {
+            navigate(getRouteByRole(user.role));
         }
     }, [navigate]);
 
@@ -28,13 +24,10 @@ function LoginPage(): JSX.Element {
         switch (role) {
             case "regular":
                 return "/report";
-
             case "mashkash":
                 return "/mashkash-dashboard";
-
             case "admin":
                 return "/admin-dashboard";
-
             default:
                 return "/";
         }
@@ -69,7 +62,6 @@ function LoginPage(): JSX.Element {
         if (validationError) {
             setError(validationError);
             setSuccessMessage("");
-            setIdentifiedUser(null);
             return;
         }
 
@@ -77,13 +69,10 @@ function LoginPage(): JSX.Element {
             setIsSubmitting(true);
             setError("");
             setSuccessMessage("");
-            setIdentifiedUser(null);
 
             const user = await authService.identify(credentials);
 
-            setIdentifiedUser(user);
             setSuccessMessage("הזיהוי בוצע בהצלחה");
-
             navigate(getRouteByRole(user.role));
         } catch (err: any) {
             const message =
@@ -92,7 +81,6 @@ function LoginPage(): JSX.Element {
 
             setError(message);
             setSuccessMessage("");
-            setIdentifiedUser(null);
         } finally {
             setIsSubmitting(false);
         }
