@@ -1,6 +1,6 @@
 class CredentialsModel {
-    public personalNumber!: string;
-    public phoneNumber!: string;
+    public personalNumber: string = "";
+    public phoneNumber: string = "";
 
 }
 
