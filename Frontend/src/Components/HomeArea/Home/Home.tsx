@@ -1,9 +1,10 @@
+import { NavLink } from "react-router-dom";
 import "./Home.css";
 
 function Home(): JSX.Element {
     return (
         <div className="Home">
-			<h2>Home Page</h2>
+            <NavLink to="/login">Go to Login page</NavLink>
         </div>
     );
 }
