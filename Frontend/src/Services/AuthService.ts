@@ -3,86 +3,72 @@ import CredentialsModel from "../Models/CredentialsModel";
 import UserModel from "../Models/UserModel";
 
 interface AuthSession {
-    user: UserModel;
-    loginDate: string;
+  user: UserModel;
+  loginDate: string;
 }
 
 class AuthService {
-    private identifyUrl = "http://localhost:3001/api/users/identify";
-    private dailyStorageKey = "dailyAuthSession";
-    private regularStorageKey = "regularAuthSession";
+  private identifyUrl = "http://localhost:3001/api/users/identify";
+  private dailyStorageKey = "dailyAuthSession";
 
-    public async identify(credentials: CredentialsModel): Promise<UserModel> {
-        const response = await axios.post<UserModel>(this.identifyUrl, credentials);
-        const user = response.data;
+  public async identify(credentials: CredentialsModel): Promise<UserModel> {
+    const response = await axios.post<UserModel>(this.identifyUrl, credentials);
+    const user = response.data;
 
-        if (user.role === "regular") {
-            this.saveRegularSession(user);
-        } else {
-            this.saveDailySession(user);
-        }
-
-        return user;
+    if (user.role === "mashkash" || user.role === "admin") {
+      this.saveDailySession(user);
     }
 
-    private getTodayDateString(): string {
-        return new Date().toISOString().split("T")[0];
+    return user;
+  }
+
+  private getTodayDateString(): string {
+    return new Date().toISOString().split("T")[0];
+  }
+
+  private saveDailySession(user: UserModel): void {
+    const session: AuthSession = {
+      user,
+      loginDate: this.getTodayDateString(),
+    };
+
+    localStorage.setItem(this.dailyStorageKey, JSON.stringify(session));
+  }
+
+  public getUser(): UserModel | null {
+    const dailySessionJson = localStorage.getItem(this.dailyStorageKey);
+    console.log("getUser dailySessionJson:", dailySessionJson);
+
+    if (!dailySessionJson) return null;
+
+    const session = JSON.parse(dailySessionJson) as AuthSession;
+    console.log("getUser parsed session:", session);
+
+    if (session.loginDate !== this.getTodayDateString()) {
+      return null;
     }
 
-    private saveRegularSession(user: UserModel): void {
-        sessionStorage.setItem(this.regularStorageKey, JSON.stringify(user));
-    }
+    return session.user;
+  }
 
-    private saveDailySession(user: UserModel): void {
-        const session: AuthSession = {
-            user,
-            loginDate: this.getTodayDateString()
-        };
+  public shouldSkipLogin(): boolean {
+    const user = this.getUser();
+    console.log("shouldSkipLogin user:", user);
 
-        localStorage.setItem(this.dailyStorageKey, JSON.stringify(session));
-    }
+    if (!user) return false;
 
-    public getUser(): UserModel | null {
-        const regularUserJson = sessionStorage.getItem(this.regularStorageKey);
-        if (regularUserJson) {
-            return JSON.parse(regularUserJson) as UserModel;
-        }
+    return user.role === "admin" || user.role === "mashkash";
+  }
 
-        const dailySessionJson = localStorage.getItem(this.dailyStorageKey);
-        if (dailySessionJson) {
-            const session = JSON.parse(dailySessionJson) as AuthSession;
-            return session.user;
-        }
+  public hasAccessSession(): boolean {
+    const result = this.shouldSkipLogin();
+    console.log("hasAccessSession:", result);
+    return result;
+  }
 
-        return null;
-    }
-
-    public shouldSkipLogin(): boolean {
-        const dailySessionJson = localStorage.getItem(this.dailyStorageKey);
-        if (!dailySessionJson) return false;
-
-        const session = JSON.parse(dailySessionJson) as AuthSession;
-
-        if (session.user.role !== "admin" && session.user.role !== "mashkash") {
-            return false;
-        }
-
-        return session.loginDate === this.getTodayDateString();
-    }
-
-    public hasAccessSession(): boolean {
-        const regularUserJson = sessionStorage.getItem(this.regularStorageKey);
-        if (regularUserJson) {
-            return true;
-        }
-
-        return this.shouldSkipLogin();
-    }
-
-    public logout(): void {
-        sessionStorage.removeItem(this.regularStorageKey);
-        localStorage.removeItem(this.dailyStorageKey);
-    }
+  public logout(): void {
+    localStorage.removeItem(this.dailyStorageKey);
+  }
 }
 
 const authService = new AuthService();

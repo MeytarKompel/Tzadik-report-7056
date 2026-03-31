@@ -15,14 +15,15 @@ function LoginPage(): JSX.Element {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (authService.shouldSkipLogin()) {
-      const user = authService.getUser();
-      if (user) {
-        navigate(getRouteByRole(user.role));
-      }
+useEffect(() => {
+  if (authService.shouldSkipLogin()) {
+    const user = authService.getUser();
+
+    if (user) {
+      navigate(getRouteByRole(user.role));
     }
-  }, [navigate]);
+  }
+}, [navigate]);
   function getRouteByRole(role: string): string {
     switch (role) {
       case "regular":
