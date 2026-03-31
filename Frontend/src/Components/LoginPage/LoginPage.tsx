@@ -1,4 +1,5 @@
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Alert from "@mui/material/Alert";
 import "./LoginPage.css";
 import CredentialsModel from "../../Models/CredentialsModel";
@@ -12,6 +13,33 @@ function LoginPage(): JSX.Element {
     const [successMessage, setSuccessMessage] = useState<string>("");
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const existingUser = authService.getUser();
+
+        if (existingUser) {
+            setIdentifiedUser(existingUser);
+            navigate(getRouteByRole(existingUser.role));
+        }
+    }, [navigate]);
+
+    function getRouteByRole(role: string): string {
+        switch (role) {
+            case "regular":
+                return "/report";
+
+            case "mashkash":
+                return "/mashkash-dashboard";
+
+            case "admin":
+                return "/admin-dashboard";
+
+            default:
+                return "/";
+        }
+    }
+
     function handleChange(event: ChangeEvent<HTMLInputElement>) {
         const { name, value } = event.target;
 
@@ -24,7 +52,6 @@ function LoginPage(): JSX.Element {
 
         if (error) setError("");
         if (successMessage) setSuccessMessage("");
-        if (identifiedUser) setIdentifiedUser(null);
     }
 
     function validate(): string {
@@ -57,10 +84,8 @@ function LoginPage(): JSX.Element {
             setIdentifiedUser(user);
             setSuccessMessage("הזיהוי בוצע בהצלחה");
 
-            console.log("Identified user:", user);
+            navigate(getRouteByRole(user.role));
         } catch (err: any) {
-            console.error(err);
-
             const message =
                 err?.response?.data?.message ||
                 "המשתמש לא נמצא או שהזיהוי נכשל";
@@ -117,17 +142,6 @@ function LoginPage(): JSX.Element {
                         {isSubmitting ? "מתחבר..." : "התחבר"}
                     </button>
                 </form>
-
-                {identifiedUser && (
-                    <div style={{ marginTop: "16px" }}>
-                        <strong>משתמש מזוהה:</strong>
-                        <div>שם: {identifiedUser.fullName}</div>
-                        <div>מספר אישי: {identifiedUser.personalNumber}</div>
-                        <div>טלפון: {identifiedUser.phone}</div>
-                        <div>יחידה: {identifiedUser.unit}</div>
-                        <div>תפקיד: {identifiedUser.role}</div>
-                    </div>
-                )}
             </div>
         </div>
     );
