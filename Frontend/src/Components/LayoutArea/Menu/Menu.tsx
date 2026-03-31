@@ -8,7 +8,6 @@ function Menu(): JSX.Element {
             <span> | </span>
             <NavLink to="#">____</NavLink>
             <span> | </span>
-            <NavLink to="/about">About</NavLink>
         </div>
     );
 }
