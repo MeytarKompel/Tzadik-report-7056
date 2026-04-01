@@ -1,9 +1,9 @@
-import { Document, Schema, model } from "mongoose";
+import { Schema, model, Types } from "mongoose";
 
 export type DailyReportStatus = "reported" | "not_reported";
 
-export interface IDailyReport extends Document {
-    inventoryItemId: string;
+export interface IDailyReport {
+    inventoryItemId: Types.ObjectId;
     sheetId: string;
     deviceNumber: string;
     reportDate: string;
@@ -21,9 +21,9 @@ export interface IDailyReport extends Document {
 const DailyReportSchema = new Schema<IDailyReport>(
     {
         inventoryItemId: {
-            type: String,
-            required: [true, "Inventory item ID is required"],
-            trim: true
+            type: Schema.Types.ObjectId,
+            ref: "InventoryItemModel",
+            required: [true, "Inventory item ID is required"]
         },
         sheetId: {
             type: String,
@@ -91,16 +91,9 @@ const DailyReportSchema = new Schema<IDailyReport>(
     }
 );
 
-// אינדקסים
 DailyReportSchema.index({ sheetId: 1 });
 DailyReportSchema.index({ reportDate: 1 });
-
-// האינדקס הנכון!
-DailyReportSchema.index(
-    { inventoryItemId: 1, reportDate: 1 },
-    { unique: true }
-);
-
+DailyReportSchema.index({ inventoryItemId: 1, reportDate: 1 }, { unique: true });
 DailyReportSchema.index({ unitResponsibleUserId: 1 });
 DailyReportSchema.index({ assignedToUserId: 1 });
 DailyReportSchema.index({ status: 1 });
