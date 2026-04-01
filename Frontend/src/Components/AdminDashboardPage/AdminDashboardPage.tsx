@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Alert from "@mui/material/Alert";
 import "./AdminDashboardPage.css";
 import AdminSummaryCard from "../../Components/AdminSummaryCard/AdminSummaryCard";
 import AddDeviceDialog from "../../Components/AddDeviceDialog/AddDeviceDialog";
@@ -7,6 +8,32 @@ import deviceService from "../../Services/DeviceService";
 
 function AdminDashboardPage(): JSX.Element {
     const [isAddDeviceDialogOpen, setIsAddDeviceDialogOpen] = useState<boolean>(false);
+    const [devices, setDevices] = useState<DeviceModel[]>([]);
+    const [error, setError] = useState<string>("");
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+
+    useEffect(() => {
+        loadDevices();
+    }, []);
+
+    async function loadDevices(): Promise<void> {
+        try {
+            setIsLoading(true);
+            setError("");
+
+            const allDevices = await deviceService.getAllDevices();
+            setDevices(allDevices);
+        } catch (err: any) {
+            const message =
+                err?.response?.data?.message ||
+                err?.response?.data ||
+                "טעינת המכשירים נכשלה";
+
+            setError(typeof message === "string" ? message : "טעינת המכשירים נכשלה");
+        } finally {
+            setIsLoading(false);
+        }
+    }
 
     function openAddDeviceDialog(): void {
         setIsAddDeviceDialogOpen(true);
@@ -17,8 +44,8 @@ function AdminDashboardPage(): JSX.Element {
     }
 
     async function saveDevice(device: DeviceModel): Promise<void> {
-        const savedDevice = await deviceService.addDevice(device);
-        console.log("Saved device:", savedDevice);
+        await deviceService.addDevice(device);
+        await loadDevices();
         setIsAddDeviceDialogOpen(false);
     }
 
@@ -32,10 +59,29 @@ function AdminDashboardPage(): JSX.Element {
             </div>
 
             <section className="admin-summary-grid">
-                <AdminSummaryCard title="סה״כ מכשירים" value={248} subtitle="כלל המכשירים במערכת" />
-                <AdminSummaryCard title="דווחו היום" value={173} subtitle="מכשירים שסומנו כדווחו" />
-                <AdminSummaryCard title="לא דווחו היום" value={75} subtitle="מכשירים שדורשים מעקב" />
-                <AdminSummaryCard title="משתמשים" value={96} subtitle="סה״כ משתמשים רשומים" />
+                <AdminSummaryCard
+                    title="סה״כ מכשירים"
+                    value={devices.length}
+                    subtitle="כלל המכשירים במערכת"
+                />
+
+                <AdminSummaryCard
+                    title="מכשירים פעילים"
+                    value={devices.filter(device => device.isActive).length}
+                    subtitle="מכשירים פעילים במערכת"
+                />
+
+                <AdminSummaryCard
+                    title="מכשירים לא פעילים"
+                    value={devices.filter(device => !device.isActive).length}
+                    subtitle="מכשירים שסומנו כלא פעילים"
+                />
+
+                <AdminSummaryCard
+                    title="משתמשים"
+                    value={96}
+                    subtitle="סה״כ משתמשים רשומים"
+                />
             </section>
 
             <section className="admin-sections-grid">
@@ -55,52 +101,54 @@ function AdminDashboardPage(): JSX.Element {
                 <div className="admin-panel">
                     <h2>סטטוס מערכת</h2>
                     <ul className="admin-status-list">
-                        <li>יש 3 יחידות עם חוסרי דיווח גבוהים</li>
-                        <li>נוצר גיליון יומי להיום</li>
-                        <li>קיימים 12 מכשירים במחסן</li>
+                        <li>סה״כ מכשירים במערכת: {devices.length}</li>
+                        <li>מכשירים פעילים: {devices.filter(device => device.isActive).length}</li>
+                        <li>מכשירים לא פעילים: {devices.filter(device => !device.isActive).length}</li>
                     </ul>
                 </div>
             </section>
 
             <section className="admin-panel">
-                <h2>מכשירים שלא דווחו היום</h2>
+                <h2>רשימת מכשירים</h2>
 
-                <div className="admin-table-wrapper">
-                    <table className="admin-table">
-                        <thead>
-                            <tr>
-                                <th>מספר מכשיר</th>
-                                <th>משתמש משויך</th>
-                                <th>יחידה</th>
-                                <th>אחראי יחידה</th>
-                                <th>סטטוס</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>100234</td>
-                                <td>ישראל ישראלי</td>
-                                <td>יחידה א</td>
-                                <td>דניאל כהן</td>
-                                <td>לא דווח</td>
-                            </tr>
-                            <tr>
-                                <td>100235</td>
-                                <td>איתי לוי</td>
-                                <td>יחידה ב</td>
-                                <td>רועי אברהם</td>
-                                <td>לא דווח</td>
-                            </tr>
-                            <tr>
-                                <td>100236</td>
-                                <td>לא משויך</td>
-                                <td>מחסן</td>
-                                <td>מנהל מערכת</td>
-                                <td>לא דווח</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                {error && (
+                    <Alert severity="error" variant="filled" sx={{ mb: 2 }}>
+                        {error}
+                    </Alert>
+                )}
+
+                {isLoading ? (
+                    <p>טוען מכשירים...</p>
+                ) : devices.length === 0 ? (
+                    <p>אין מכשירים להצגה.</p>
+                ) : (
+                    <div className="admin-table-wrapper">
+                        <table className="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>מספר מכשיר</th>
+                                    <th>שם מכשיר</th>
+                                    <th>פעיל</th>
+                                    <th>נוצר בתאריך</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {devices.map(device => (
+                                    <tr key={device._id || device.deviceNumber}>
+                                        <td>{device.deviceNumber}</td>
+                                        <td>{device.deviceName}</td>
+                                        <td>{device.isActive ? "כן" : "לא"}</td>
+                                        <td>
+                                            {device.createdAt
+                                                ? new Date(device.createdAt).toLocaleDateString("he-IL")
+                                                : "-"}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </section>
 
             <AddDeviceDialog
