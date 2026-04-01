@@ -1,9 +1,8 @@
-import { Document, Schema, model } from "mongoose";
+import { Schema, model } from "mongoose";
 
 export type InventorySheetStatus = "active" | "closed";
 
-export interface IInventorySheet extends Document {
-    _id: string;
+export interface IInventorySheet {
     sheetName: string;
     description?: string;
     createdByUserId: string;
@@ -14,11 +13,6 @@ export interface IInventorySheet extends Document {
 
 const InventorySheetSchema = new Schema<IInventorySheet>(
     {
-        _id: {
-            type: String,
-            required: [true, "Sheet ID is required"],
-            trim: true
-        },
         sheetName: {
             type: String,
             required: [true, "Sheet name is required"],

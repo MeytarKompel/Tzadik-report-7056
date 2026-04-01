@@ -1,10 +1,9 @@
-import { Document, Schema, model } from "mongoose";
+import { Schema, model } from "mongoose";
 
 export type InventoryItemStatus = "assigned" | "returned" | "not_assigned";
 export type InventoryReportStatus = "reported" | "not_reported";
 
-export interface IInventoryItem extends Document {
-    _id: string;
+export interface IInventoryItem {
     sheetId: string;
     unit: string;
     unitResponsibleUserId: string;
@@ -23,11 +22,6 @@ export interface IInventoryItem extends Document {
 
 const InventoryItemSchema = new Schema<IInventoryItem>(
     {
-        _id: {
-            type: String,
-            required: [true, "Inventory item ID is required"],
-            trim: true
-        },
         sheetId: {
             type: String,
             required: [true, "Sheet ID is required"],
@@ -49,10 +43,13 @@ const InventoryItemSchema = new Schema<IInventoryItem>(
             trim: true,
             default: null,
             validate: {
-                validator: function (this: IInventoryItem, value: string | null): boolean {
-                    if (this.status === "assigned") {
+                validator: function (value: string | null): boolean {
+                    const doc = this as IInventoryItem;
+
+                    if (doc.status === "assigned") {
                         return !!value && /^\d+$/.test(value);
                     }
+
                     return value === null || value === undefined || value === "";
                 },
                 message: "Assigned user ID is required only when status is 'assigned'"
@@ -62,10 +59,13 @@ const InventoryItemSchema = new Schema<IInventoryItem>(
             type: Date,
             default: null,
             validate: {
-                validator: function (this: IInventoryItem, value: Date | null): boolean {
-                    if (this.status === "assigned") {
+                validator: function (value: Date | null): boolean {
+                    const doc = this as IInventoryItem;
+
+                    if (doc.status === "assigned") {
                         return value instanceof Date;
                     }
+
                     return value === null || value === undefined;
                 },
                 message: "Signed date is required only when status is 'assigned'"
