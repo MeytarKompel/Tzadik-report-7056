@@ -3,6 +3,7 @@ import "./AdminDashboardPage.css";
 import AdminSummaryCard from "../../Components/AdminSummaryCard/AdminSummaryCard";
 import AddDeviceDialog from "../../Components/AddDeviceDialog/AddDeviceDialog";
 import DeviceModel from "../../Models/DeviceModel";
+import deviceService from "../../Services/DeviceService";
 
 function AdminDashboardPage(): JSX.Element {
     const [isAddDeviceDialogOpen, setIsAddDeviceDialogOpen] = useState<boolean>(false);
@@ -15,8 +16,9 @@ function AdminDashboardPage(): JSX.Element {
         setIsAddDeviceDialogOpen(false);
     }
 
-    function saveDevice(device: DeviceModel): void {
-        console.log("Device to save:", device);
+    async function saveDevice(device: DeviceModel): Promise<void> {
+        const savedDevice = await deviceService.addDevice(device);
+        console.log("Saved device:", savedDevice);
         setIsAddDeviceDialogOpen(false);
     }
 

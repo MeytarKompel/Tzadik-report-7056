@@ -6,20 +6,20 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import DeviceModel from "../../Models/DeviceModel";
 
 interface AddDeviceDialogProps {
     open: boolean;
     onClose: () => void;
-    onSave: (device: DeviceModel) => void;
+    onSave: (device: DeviceModel) => Promise<void>;
 }
 
 function AddDeviceDialog(props: AddDeviceDialogProps): JSX.Element {
     const [device, setDevice] = useState<DeviceModel>(new DeviceModel());
     const [error, setError] = useState<string>("");
     const [successMessage, setSuccessMessage] = useState<string>("");
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
     function handleChange(event: ChangeEvent<HTMLInputElement>): void {
         const { name, value } = event.target;
@@ -27,10 +27,7 @@ function AddDeviceDialog(props: AddDeviceDialogProps): JSX.Element {
         const updatedDevice = new DeviceModel();
         updatedDevice.deviceNumber = device.deviceNumber;
         updatedDevice.deviceName = device.deviceName;
-        updatedDevice.unit = device.unit;
-        updatedDevice.assignedToUserId = device.assignedToUserId;
-        updatedDevice.unitResponsibleUserId = device.unitResponsibleUserId;
-        updatedDevice.status = device.status;
+        updatedDevice.isActive = device.isActive;
 
         updatedDevice[name as keyof DeviceModel] = value as never;
 
@@ -43,13 +40,11 @@ function AddDeviceDialog(props: AddDeviceDialogProps): JSX.Element {
     function validate(): string {
         if (!device.deviceNumber.trim()) return "יש להזין מספר מכשיר";
         if (!device.deviceName.trim()) return "יש להזין שם מכשיר";
-        if (!device.unit.trim()) return "יש לבחור יחידה";
-        if (!device.unitResponsibleUserId.trim()) return "יש להזין אחראי יחידה";
         if (!/^\d+$/.test(device.deviceNumber)) return "מספר מכשיר חייב להכיל ספרות בלבד";
         return "";
     }
 
-    function handleSubmit(event: FormEvent<HTMLFormElement>): void {
+    async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
         event.preventDefault();
 
         const validationError = validate();
@@ -59,11 +54,36 @@ function AddDeviceDialog(props: AddDeviceDialogProps): JSX.Element {
             return;
         }
 
-        props.onSave(device);
-        setSuccessMessage("המכשיר נשמר בהצלחה");
+        try {
+            setIsSubmitting(true);
+            setError("");
+            setSuccessMessage("");
+
+            await props.onSave(device);
+
+            setSuccessMessage("המכשיר נשמר בהצלחה");
+
+            setTimeout(() => {
+                setDevice(new DeviceModel());
+                setSuccessMessage("");
+                props.onClose();
+            }, 800);
+        } catch (err: any) {
+            const message =
+                err?.response?.data?.message ||
+                err?.response?.data ||
+                "שמירת המכשיר נכשלה";
+
+            setError(typeof message === "string" ? message : "שמירת המכשיר נכשלה");
+            setSuccessMessage("");
+        } finally {
+            setIsSubmitting(false);
+        }
     }
 
     function handleClose(): void {
+        if (isSubmitting) return;
+
         setError("");
         setSuccessMessage("");
         setDevice(new DeviceModel());
@@ -71,7 +91,7 @@ function AddDeviceDialog(props: AddDeviceDialogProps): JSX.Element {
     }
 
     return (
-        <Dialog open={props.open} onClose={handleClose} fullWidth maxWidth="md">
+        <Dialog open={props.open} onClose={handleClose} fullWidth maxWidth="sm">
             <DialogTitle sx={{ direction: "rtl", textAlign: "right" }}>
                 הוספת מכשיר חדש
             </DialogTitle>
@@ -80,8 +100,8 @@ function AddDeviceDialog(props: AddDeviceDialogProps): JSX.Element {
                 <DialogContent sx={{ direction: "rtl" }}>
                     <Box
                         sx={{
-                            display: "grid",
-                            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                            display: "flex",
+                            flexDirection: "column",
                             gap: 2,
                             mt: 1
                         }}
@@ -101,49 +121,6 @@ function AddDeviceDialog(props: AddDeviceDialogProps): JSX.Element {
                             onChange={handleChange}
                             fullWidth
                         />
-
-                        <TextField
-                            select
-                            label="יחידה"
-                            name="unit"
-                            value={device.unit}
-                            onChange={handleChange}
-                            fullWidth
-                        >
-                            <MenuItem value="">בחר יחידה</MenuItem>
-                            <MenuItem value="יחידה א">יחידה א</MenuItem>
-                            <MenuItem value="יחידה ב">יחידה ב</MenuItem>
-                            <MenuItem value="מחסן">מחסן</MenuItem>
-                        </TextField>
-
-                        <TextField
-                            label="משתמש משויך"
-                            name="assignedToUserId"
-                            value={device.assignedToUserId}
-                            onChange={handleChange}
-                            fullWidth
-                            helperText="אופציונלי"
-                        />
-
-                        <TextField
-                            label="אחראי יחידה"
-                            name="unitResponsibleUserId"
-                            value={device.unitResponsibleUserId}
-                            onChange={handleChange}
-                            fullWidth
-                        />
-
-                        <TextField
-                            select
-                            label="סטטוס"
-                            name="status"
-                            value={device.status}
-                            onChange={handleChange}
-                            fullWidth
-                        >
-                            <MenuItem value="assigned">assigned</MenuItem>
-                            <MenuItem value="in_warehouse">in_warehouse</MenuItem>
-                        </TextField>
                     </Box>
 
                     {error && (
@@ -164,11 +141,11 @@ function AddDeviceDialog(props: AddDeviceDialogProps): JSX.Element {
                 </DialogContent>
 
                 <DialogActions sx={{ px: 3, pb: 3, direction: "rtl" }}>
-                    <Button type="submit" variant="contained">
-                        שמור
+                    <Button type="submit" variant="contained" disabled={isSubmitting}>
+                        {isSubmitting ? "שומר..." : "שמור"}
                     </Button>
 
-                    <Button type="button" variant="outlined" onClick={handleClose}>
+                    <Button type="button" variant="outlined" onClick={handleClose} disabled={isSubmitting}>
                         ביטול
                     </Button>
                 </DialogActions>
