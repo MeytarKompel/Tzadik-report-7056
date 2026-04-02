@@ -81,4 +81,13 @@ router.delete("/devices/by-number/:deviceNumber", async (req: Request, res: Resp
     }
 });
 
+router.post("/devices/import", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const devices = await deviceLogic.importDevices(req.body);
+        res.status(201).json(devices);
+    } catch (err) {
+        next(err);
+    }
+});
+
 export default router;

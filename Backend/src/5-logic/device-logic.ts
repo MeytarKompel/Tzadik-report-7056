@@ -98,6 +98,16 @@ class DeviceLogic {
     public async deleteDeviceByNumber(deviceNumber: string): Promise<IDevice | null> {
         return DeviceModel.findOneAndDelete({ deviceNumber }).exec();
     }
+
+    public async  importDevices(devices: Partial<IDevice>[]): Promise<IDevice[]> {
+    const preparedDevices = devices.map(device => ({
+        deviceNumber: String(device.deviceNumber ?? "").trim(),
+        deviceName: String(device.deviceName ?? "").trim(),
+        isActive: true
+    }));
+
+    return await DeviceModel.insertMany(preparedDevices, { ordered: false });
+}
 }
 
 const deviceLogic = new DeviceLogic();
