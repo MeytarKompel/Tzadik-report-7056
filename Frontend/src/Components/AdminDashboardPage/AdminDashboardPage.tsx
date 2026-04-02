@@ -8,6 +8,9 @@ import deviceService from "../../Services/DeviceService";
 import { useNavigate } from "react-router-dom";
 import inventoryService from "../../Services/InventoryService";
 import AddInventorySheetDialog from "../AddInventorySheetDialog/AddInventorySheetDialog";
+import axios from "axios";
+import dailyReportService from "../../Services/DailyReportService";
+import CreateDailyReportDialog from "../CreateDailyReportDialog/CreateDailyReportDialog";
 
 function AdminDashboardPage(): JSX.Element {
   const [isAddDeviceDialogOpen, setIsAddDeviceDialogOpen] =
@@ -20,9 +23,15 @@ function AdminDashboardPage(): JSX.Element {
   const [sheetError, setSheetError] = useState<string>("");
   const [isCreatingSheet, setIsCreatingSheet] = useState<boolean>(false);
   const [isSheetDialogOpen, setIsSheetDialogOpen] = useState(false);
+  const [isDailyDialogOpen, setIsDailyDialogOpen] = useState(false);
+  const [sheets, setSheets] = useState([]);
 
   useEffect(() => {
     loadDevices();
+  }, []);
+
+  useEffect(() => {
+    loadSheets();
   }, []);
 
   async function loadDevices(): Promise<void> {
@@ -41,6 +50,15 @@ function AdminDashboardPage(): JSX.Element {
       setError(typeof message === "string" ? message : "טעינת המכשירים נכשלה");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function loadSheets(): Promise<void> {
+    try {
+      const res = await axios.get("http://localhost:3001/api/inventory-sheets");
+      setSheets(res.data);
+    } catch {
+      console.error("Failed to load sheets");
     }
   }
 
@@ -74,6 +92,10 @@ function AdminDashboardPage(): JSX.Element {
     setIsSheetDialogOpen(false);
   }
 
+  async function createDaily(sheetId: string, date: string): Promise<void> {
+    await dailyReportService.createDaily(sheetId, date);
+    setIsDailyDialogOpen(false);
+  }
   return (
     <div className="admin-dashboard">
       <div className="admin-dashboard-header">
@@ -120,7 +142,9 @@ function AdminDashboardPage(): JSX.Element {
             <button type="button" onClick={openSheetDialog}>
               יצירת גיליון מלאי
             </button>
-            <button type="button">יצירת דיווח יומי</button>
+            <button onClick={() => setIsDailyDialogOpen(true)}>
+              יצירת דיווח יומי
+            </button>{" "}
             <button type="button">מעקב אחרי לא דווח</button>
             <button type="button" onClick={() => navigate("/import-devices")}>
               ייבוא מכשירים מ-CSV
@@ -207,6 +231,13 @@ function AdminDashboardPage(): JSX.Element {
         open={isSheetDialogOpen}
         onClose={closeSheetDialog}
         onSave={saveSheet}
+      />
+
+      <CreateDailyReportDialog
+        open={isDailyDialogOpen}
+        onClose={() => setIsDailyDialogOpen(false)}
+        onSave={createDaily}
+        sheets={sheets}
       />
     </div>
   );
