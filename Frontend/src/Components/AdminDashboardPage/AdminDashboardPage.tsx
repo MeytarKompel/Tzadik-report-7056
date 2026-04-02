@@ -7,6 +7,7 @@ import DeviceModel from "../../Models/DeviceModel";
 import deviceService from "../../Services/DeviceService";
 import { useNavigate } from "react-router-dom";
 import inventoryService from "../../Services/InventoryService";
+import AddInventorySheetDialog from "../AddInventorySheetDialog/AddInventorySheetDialog";
 
 function AdminDashboardPage(): JSX.Element {
   const [isAddDeviceDialogOpen, setIsAddDeviceDialogOpen] =
@@ -18,6 +19,7 @@ function AdminDashboardPage(): JSX.Element {
   const [sheetMessage, setSheetMessage] = useState<string>("");
   const [sheetError, setSheetError] = useState<string>("");
   const [isCreatingSheet, setIsCreatingSheet] = useState<boolean>(false);
+  const [isSheetDialogOpen, setIsSheetDialogOpen] = useState(false);
 
   useEffect(() => {
     loadDevices();
@@ -56,27 +58,20 @@ function AdminDashboardPage(): JSX.Element {
     setIsAddDeviceDialogOpen(false);
   }
 
-  async function createInventorySheet(): Promise<void> {
-    try {
-      setIsCreatingSheet(true);
-      setSheetError("");
-      setSheetMessage("");
+  function openSheetDialog() {
+    setIsSheetDialogOpen(true);
+  }
 
-      await inventoryService.createSheet();
+  function closeSheetDialog() {
+    setIsSheetDialogOpen(false);
+  }
 
-      setSheetMessage("גיליון מלאי נוצר בהצלחה");
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.message ||
-        err?.response?.data ||
-        "יצירת גיליון נכשלה";
-
-      setSheetError(
-        typeof message === "string" ? message : "יצירת גיליון נכשלה",
-      );
-    } finally {
-      setIsCreatingSheet(false);
-    }
+  async function saveSheet(
+    sheetName: string,
+    description: string,
+  ): Promise<void> {
+    await inventoryService.createSheet(sheetName, description);
+    setIsSheetDialogOpen(false);
   }
 
   return (
@@ -122,13 +117,9 @@ function AdminDashboardPage(): JSX.Element {
             <button type="button" onClick={openAddDeviceDialog}>
               הוספת מכשיר חדש
             </button>
-            <button
-              type="button"
-              onClick={createInventorySheet}
-              disabled={isCreatingSheet}
-            >
-              {isCreatingSheet ? "יוצר..." : "פתיחת גיליון מלאי חדש"}
-            </button>{" "}
+            <button type="button" onClick={openSheetDialog}>
+              יצירת גיליון מלאי
+            </button>
             <button type="button">יצירת דיווח יומי</button>
             <button type="button">מעקב אחרי לא דווח</button>
             <button type="button" onClick={() => navigate("/import-devices")}>
@@ -210,6 +201,12 @@ function AdminDashboardPage(): JSX.Element {
         open={isAddDeviceDialogOpen}
         onClose={closeAddDeviceDialog}
         onSave={saveDevice}
+      />
+
+      <AddInventorySheetDialog
+        open={isSheetDialogOpen}
+        onClose={closeSheetDialog}
+        onSave={saveSheet}
       />
     </div>
   );
