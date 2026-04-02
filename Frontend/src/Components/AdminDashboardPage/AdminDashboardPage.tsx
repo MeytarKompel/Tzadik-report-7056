@@ -6,6 +6,7 @@ import AddDeviceDialog from "../../Components/AddDeviceDialog/AddDeviceDialog";
 import DeviceModel from "../../Models/DeviceModel";
 import deviceService from "../../Services/DeviceService";
 import { useNavigate } from "react-router-dom";
+import inventoryService from "../../Services/InventoryService";
 
 function AdminDashboardPage(): JSX.Element {
   const [isAddDeviceDialogOpen, setIsAddDeviceDialogOpen] =
@@ -14,6 +15,9 @@ function AdminDashboardPage(): JSX.Element {
   const navigate = useNavigate();
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [sheetMessage, setSheetMessage] = useState<string>("");
+  const [sheetError, setSheetError] = useState<string>("");
+  const [isCreatingSheet, setIsCreatingSheet] = useState<boolean>(false);
 
   useEffect(() => {
     loadDevices();
@@ -50,6 +54,29 @@ function AdminDashboardPage(): JSX.Element {
     await deviceService.addDevice(device);
     await loadDevices();
     setIsAddDeviceDialogOpen(false);
+  }
+
+  async function createInventorySheet(): Promise<void> {
+    try {
+      setIsCreatingSheet(true);
+      setSheetError("");
+      setSheetMessage("");
+
+      await inventoryService.createSheet();
+
+      setSheetMessage("גיליון מלאי נוצר בהצלחה");
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data ||
+        "יצירת גיליון נכשלה";
+
+      setSheetError(
+        typeof message === "string" ? message : "יצירת גיליון נכשלה",
+      );
+    } finally {
+      setIsCreatingSheet(false);
+    }
   }
 
   return (
@@ -95,12 +122,28 @@ function AdminDashboardPage(): JSX.Element {
             <button type="button" onClick={openAddDeviceDialog}>
               הוספת מכשיר חדש
             </button>
-            <button type="button">פתיחת גיליון מלאי חדש</button>
+            <button
+              type="button"
+              onClick={createInventorySheet}
+              disabled={isCreatingSheet}
+            >
+              {isCreatingSheet ? "יוצר..." : "פתיחת גיליון מלאי חדש"}
+            </button>{" "}
             <button type="button">יצירת דיווח יומי</button>
             <button type="button">מעקב אחרי לא דווח</button>
             <button type="button" onClick={() => navigate("/import-devices")}>
               ייבוא מכשירים מ-CSV
             </button>{" "}
+            {sheetError && (
+              <Alert severity="error" variant="filled" sx={{ mt: 2 }}>
+                {sheetError}
+              </Alert>
+            )}
+            {sheetMessage && (
+              <Alert severity="success" variant="filled" sx={{ mt: 2 }}>
+                {sheetMessage}
+              </Alert>
+            )}
           </div>
         </div>
 
