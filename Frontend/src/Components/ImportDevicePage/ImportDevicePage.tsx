@@ -7,11 +7,13 @@ import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import DeviceModel from "../../Models/DeviceModel";
 import deviceService from "../../Services/DeviceService";
+import { useNavigate } from "react-router-dom";
 
 function ImportDevicesPage(): JSX.Element {
   const [devices, setDevices] = useState<DeviceModel[]>([]);
   const [error, setError] = useState<string>("");
-  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [successMessage, setSuccessMessage] = useState<string>();
+  const navigate = useNavigate();
   const [isUploading, setIsUploading] = useState<boolean>(false);
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>): void {
@@ -97,6 +99,8 @@ function ImportDevicesPage(): JSX.Element {
         gap: 3,
       }}
     >
+      <button onClick={() => navigate("/admin")}>Back</button>
+
       <Typography variant="h4">ייבוא מכשירים מ-CSV</Typography>
 
       <Paper sx={{ p: 3 }}>
