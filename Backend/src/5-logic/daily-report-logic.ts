@@ -209,10 +209,15 @@ async function markDeviceAsNotReported(
     return dailyReport;
 }
 
+async function getDailyReportsBySheet(sheetId: string) {
+    return DailyReportModel.find({ sheetId }).lean().exec();
+}
+
 export default {
     createDailySheetFromInventorySheet,
     getDailyReportsByDate,
     getDailyReportsBySheetAndDate,
     reportDevice,
-    markDeviceAsNotReported
+    markDeviceAsNotReported,
+    getDailyReportsBySheet
 };

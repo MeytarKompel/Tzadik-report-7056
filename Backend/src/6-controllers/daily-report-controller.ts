@@ -76,4 +76,13 @@ router.patch("/daily-reports/not-reported", async (req: Request, res: Response, 
     }
 });
 
+router.get("/daily-reports/by-sheet/:sheetId", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const reports = await dailyReportLogic.getDailyReportsBySheet(req.params.sheetId);
+        res.json(reports);
+    } catch (err) {
+        next(err);
+    }
+});
+
 export default router;
