@@ -89,6 +89,7 @@ function AdminDashboardPage(): JSX.Element {
     description: string,
   ): Promise<void> {
     await inventoryService.createSheet(sheetName, description);
+    await loadSheets();
     setIsSheetDialogOpen(false);
   }
 
@@ -142,9 +143,14 @@ function AdminDashboardPage(): JSX.Element {
             <button type="button" onClick={openSheetDialog}>
               יצירת גיליון מלאי
             </button>
-            <button onClick={() => setIsDailyDialogOpen(true)}>
+            <button
+              onClick={async () => {
+                await loadSheets();
+                setIsDailyDialogOpen(true);
+              }}
+            >
               יצירת דיווח יומי
-            </button>{" "}
+            </button>
             <button type="button">מעקב אחרי לא דווח</button>
             <button type="button" onClick={() => navigate("/import-devices")}>
               ייבוא מכשירים מ-CSV

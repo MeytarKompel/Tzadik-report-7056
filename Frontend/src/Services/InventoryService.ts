@@ -8,11 +8,11 @@ public async createSheet(sheetName: string, description: string): Promise<void> 
     const user = authService.getUser();
     if (!user) throw new Error("User not logged in");
 
-    await axios.post(this.baseUrl, {
-        createdByUserId: user.personalNumber,
-        sheetName,
-        description
-    });
+await axios.post(`${this.baseUrl}/create-clean`, {
+    createdByUserId: user.personalNumber,
+    sheetName,
+    description
+});
 }
 }
 

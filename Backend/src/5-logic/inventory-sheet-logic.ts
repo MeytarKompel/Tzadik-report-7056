@@ -60,20 +60,15 @@ async function createCleanInventorySheet(data: {
         throw new ClientError(403, "Only admin can create a new inventory sheet");
     }
 
-    const today = new Date().toISOString().slice(0, 10);
-    const generatedId = `sheet-${today}-${Date.now()}`;
-
-    // ✅ יצירת הגיליון
+    // 🔹 יצירת גיליון (Mongo נותן ObjectId)
     const newSheet = await InventorySheetModel.create({
-        _id: generatedId,
         sheetName: data.sheetName,
         description: data.description ?? "",
         createdByUserId: data.createdByUserId,
         status: "active"
     });
 
-    // 🔥🔥🔥 הוספה חדשה – יצירת inventory_items 🔥🔥🔥
-
+    // 🔥 יצירת inventory_items
     const devices = await DeviceModel.find({ isActive: true }).lean().exec();
 
     if (!devices.length) {
@@ -81,17 +76,18 @@ async function createCleanInventorySheet(data: {
     }
 
     const items = devices.map(device => ({
-        _id: `${generatedId}_${device.deviceNumber}`,
-        sheetId: generatedId,
+        sheetId: newSheet._id, // ⚠️ חשוב: להשתמש ב־_id של Mongo
         deviceNumber: device.deviceNumber,
-        unit: "מחסן", // TODO: לשפר בהמשך
+        unit: "מחסן",
         status: "not_assigned",
         assignedToUserId: null,
-        unitResponsibleUserId: "00000", // מזהה מחסן
+        unitResponsibleUserId: "00000",
         isDeleted: false
     }));
 
     await InventoryItemModel.insertMany(items);
+
+    console.log("✅ Inventory items created:", items.length);
 
     return newSheet;
 }
