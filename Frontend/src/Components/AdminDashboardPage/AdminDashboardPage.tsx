@@ -165,6 +165,9 @@ function AdminDashboardPage(): JSX.Element {
                 {sheetMessage}
               </Alert>
             )}
+            <button onClick={() => navigate("/inventory-sheets")}>
+              מעבר לרשימת גיליונות
+            </button>
           </div>
         </div>
 

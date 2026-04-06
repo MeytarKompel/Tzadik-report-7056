@@ -6,6 +6,8 @@ import ProtectedRoute from "../../ProtectedRoute/ProtectedRoute";
 import Layout from "../../LayoutArea/Layout/Layout";
 import MashkashDashboardPage from "../../MashkashDashboardPage/MashkashDashboardPage";
 import ImportDevicesPage from "../../ImportDevicePage/ImportDevicePage";
+import InventorySheetDetailsPage from "../../InventoryShhetDetailsPage/InventoryShhetDetailsPage";
+import InventorySheetsPage from "../../InventorySheetsPage/InventorySheetsPage";
 
 function Routing(): JSX.Element {
   return (
@@ -47,6 +49,13 @@ function Routing(): JSX.Element {
             <ImportDevicesPage />
           </ProtectedRoute>
         }
+      />
+
+      <Route path="/inventory-sheets" element={<InventorySheetsPage />} />
+
+      <Route
+        path="/inventory-sheets/:id"
+        element={<InventorySheetDetailsPage />}
       />
 
       <Route path="*" element={<Navigate to="/" replace />} />
