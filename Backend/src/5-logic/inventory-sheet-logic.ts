@@ -46,6 +46,7 @@ async function createCleanInventorySheet(data: {
     description?: string;
     createdByUserId: string;
 }): Promise<IInventorySheet> {
+
     const creator = await UserModel.findOne({
         personalNumber: data.createdByUserId,
         isActive: true
@@ -62,13 +63,37 @@ async function createCleanInventorySheet(data: {
     const today = new Date().toISOString().slice(0, 10);
     const generatedId = `sheet-${today}-${Date.now()}`;
 
-    return InventorySheetModel.create({
+    // ✅ יצירת הגיליון
+    const newSheet = await InventorySheetModel.create({
         _id: generatedId,
         sheetName: data.sheetName,
         description: data.description ?? "",
         createdByUserId: data.createdByUserId,
         status: "active"
     });
+
+    // 🔥🔥🔥 הוספה חדשה – יצירת inventory_items 🔥🔥🔥
+
+    const devices = await DeviceModel.find({ isActive: true }).lean().exec();
+
+    if (!devices.length) {
+        throw new ClientError(400, "No devices found to create inventory items");
+    }
+
+    const items = devices.map(device => ({
+        _id: `${generatedId}_${device.deviceNumber}`,
+        sheetId: generatedId,
+        deviceNumber: device.deviceNumber,
+        unit: "מחסן", // TODO: לשפר בהמשך
+        status: "not_assigned",
+        assignedToUserId: null,
+        unitResponsibleUserId: "00000", // מזהה מחסן
+        isDeleted: false
+    }));
+
+    await InventoryItemModel.insertMany(items);
+
+    return newSheet;
 }
 
 async function updateInventorySheet(
