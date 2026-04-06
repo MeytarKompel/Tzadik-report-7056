@@ -6,7 +6,7 @@ import ProtectedRoute from "../../ProtectedRoute/ProtectedRoute";
 import Layout from "../../LayoutArea/Layout/Layout";
 import MashkashDashboardPage from "../../MashkashDashboardPage/MashkashDashboardPage";
 import ImportDevicesPage from "../../ImportDevicePage/ImportDevicePage";
-import InventorySheetDetailsPage from "../../InventoryShhetDetailsPage/InventoryShhetDetailsPage";
+import InventorySheetDetailsPage from "../../InventorySheetDetailsPage/InventorySheetDetailsPage";
 import InventorySheetsPage from "../../InventorySheetsPage/InventorySheetsPage";
 
 function Routing(): JSX.Element {
