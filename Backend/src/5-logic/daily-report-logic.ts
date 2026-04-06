@@ -76,6 +76,7 @@ async function getDailyReportsBySheetAndDate(
         .exec();
 }
 
+
 async function reportDevice(data: ReportDailyDeviceData): Promise<IDailyReport> {
     const normalizedPhone = data.phone.replace(/\D/g, "");
 

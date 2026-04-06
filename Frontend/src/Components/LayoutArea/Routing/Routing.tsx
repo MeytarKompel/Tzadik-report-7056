@@ -8,6 +8,8 @@ import MashkashDashboardPage from "../../MashkashDashboardPage/MashkashDashboard
 import ImportDevicesPage from "../../ImportDevicePage/ImportDevicePage";
 import InventorySheetDetailsPage from "../../InventorySheetDetailsPage/InventorySheetDetailsPage";
 import InventorySheetsPage from "../../InventorySheetsPage/InventorySheetsPage";
+import DailyReportDetailsPage from "../../DailyReportsDetailsPage/DailyReportsDetailsPage";
+import DailyReportsListPage from "../../DailyReportsListPage/DailyReportsListPage";
 
 function Routing(): JSX.Element {
   return (
@@ -52,6 +54,16 @@ function Routing(): JSX.Element {
       />
 
       <Route path="/inventory-sheets" element={<InventorySheetsPage />} />
+
+      <Route
+        path="/inventory-sheets/:id/reports"
+        element={<DailyReportsListPage />}
+      />
+
+      <Route
+        path="/inventory-sheets/:id/report/:date"
+        element={<DailyReportDetailsPage />}
+      />
 
       <Route
         path="/inventory-sheets/:id"

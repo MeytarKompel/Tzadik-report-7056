@@ -33,6 +33,15 @@ router.get("/daily-reports/by-date/:reportDate", async (req: Request, res: Respo
     }
 });
 
+router.get("/daily-reports/by-sheet/:sheetId", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const reports = await dailyReportLogic.getDailyReportsBySheet(req.params.sheetId);
+        res.json(reports);
+    } catch (err) {
+        next(err);
+    }
+});
+
 // GET BY SHEET AND DATE
 router.get("/daily-reports/:sheetId/:reportDate", async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -76,13 +85,6 @@ router.patch("/daily-reports/not-reported", async (req: Request, res: Response, 
     }
 });
 
-router.get("/daily-reports/by-sheet/:sheetId", async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const reports = await dailyReportLogic.getDailyReportsBySheet(req.params.sheetId);
-        res.json(reports);
-    } catch (err) {
-        next(err);
-    }
-});
+
 
 export default router;

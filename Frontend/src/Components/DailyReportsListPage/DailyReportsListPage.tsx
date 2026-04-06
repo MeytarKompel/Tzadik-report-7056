@@ -19,11 +19,15 @@ function DailyReportsListPage(): JSX.Element {
         `http://localhost:3001/api/daily-reports/by-sheet/${id}`
       );
 
+      console.log("Daily reports for sheet:", res.data);
+
       const reports = res.data;
 
       const uniqueDates = Array.from(
         new Set(reports.map((r: any) => r.reportDate))
       ) as string[];
+
+      console.log("Unique report dates:", uniqueDates);
 
       setDates(uniqueDates);
     } catch (err) {
