@@ -16,7 +16,7 @@ function DailyReportsListPage(): JSX.Element {
   async function loadDates(): Promise<void> {
     try {
       const res = await axios.get(
-        `http://localhost:3001/api/daily-reports/by-sheet/${id}`
+        `http://localhost:3001/api/daily-reports/by-sheet/${id}`,
       );
 
       console.log("Daily reports for sheet:", res.data);
@@ -24,7 +24,7 @@ function DailyReportsListPage(): JSX.Element {
       const reports = res.data;
 
       const uniqueDates = Array.from(
-        new Set(reports.map((r: any) => r.reportDate))
+        new Set(reports.map((r: any) => r.reportDate)),
       ) as string[];
 
       console.log("Unique report dates:", uniqueDates);
@@ -41,6 +41,8 @@ function DailyReportsListPage(): JSX.Element {
 
   return (
     <div style={{ padding: "20px" }}>
+      <button onClick={() => navigate(-1)}>Back</button>
+
       <h1>דיווחים יומיים</h1>
 
       {dates.map((date) => (

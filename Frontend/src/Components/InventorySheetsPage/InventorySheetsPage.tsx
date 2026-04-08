@@ -27,6 +27,8 @@ function InventorySheetsPage(): JSX.Element {
 
   return (
     <div style={{ padding: "20px" }}>
+      <button onClick={() => navigate("/admin")}>Back</button>
+
       <h1>רשימת גיליונות</h1>
 
       {sheets.map((sheet: any) => {
