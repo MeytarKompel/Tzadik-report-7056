@@ -6,7 +6,6 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import TableBody from "@mui/material/TableBody";
-import Tab from "@mui/material/Tab";
 import TableContainer from "@mui/material/TableContainer";
 import Paper from "@mui/material/Paper";
 
@@ -15,6 +14,7 @@ function DailyReportDetailsPage(): JSX.Element {
   const [data, setData] = useState<any>(null);
   const [searchDeviceNumber, setSearchDeviceNumber] = useState("");
   const [filterDeviceName, setFilterDeviceName] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -42,6 +42,7 @@ function DailyReportDetailsPage(): JSX.Element {
   const filteredRows = rows.filter((row: any) => {
     const rowDeviceNumber = String(row.deviceNumber ?? "").trim();
     const rowDeviceName = String(row.deviceName ?? "").trim();
+    const rowReportStatus = String(row.dailyReport?.status ?? "").trim();
 
     const matchesDeviceNumber =
       searchDeviceNumber.trim() === "" ||
@@ -51,13 +52,15 @@ function DailyReportDetailsPage(): JSX.Element {
       filterDeviceName.trim() === "" ||
       rowDeviceName === filterDeviceName.trim();
 
-    return matchesDeviceNumber && matchesDeviceName;
-  });
+    const matchesStatus =
+      filterStatus === "all" || rowReportStatus === filterStatus;
 
+    return matchesDeviceNumber && matchesDeviceName && matchesStatus;
+  });
   if (!data) return <div>טוען...</div>;
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div dir="rtl" style={{ padding: "20px" }}>
       <button onClick={() => navigate(-1)}>Back</button>
 
       <h1>{data.sheet.sheetName}</h1>
@@ -101,12 +104,27 @@ function DailyReportDetailsPage(): JSX.Element {
             </option>
           ))}
         </select>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          style={{
+            padding: "10px",
+            border: "1px solid #ccc",
+            borderRadius: "8px",
+            minWidth: "220px",
+          }}
+        >
+          <option value="all">הכל</option>
+          <option value="reported">דווח</option>
+          <option value="not_reported">לא דווח</option>
+        </select>
 
         <button
           type="button"
           onClick={() => {
             setSearchDeviceNumber("");
             setFilterDeviceName("");
+            setFilterStatus("all");
           }}
           style={{
             padding: "10px 16px",
@@ -118,14 +136,14 @@ function DailyReportDetailsPage(): JSX.Element {
           נקה סינון
         </button>
       </div>
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} dir="rtl">
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: "bold" }}>מכשיר</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>שם</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>סטטוס</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>דיווח</TableCell>
+              <TableCell align="right" sx={{ fontWeight: "bold" }}>מכשיר</TableCell>
+              <TableCell align="right" sx={{ fontWeight: "bold" }}>שם</TableCell>
+              <TableCell align="right" sx={{ fontWeight: "bold" }}>סטטוס</TableCell>
+              <TableCell align="right" sx={{ fontWeight: "bold" }}>דיווח</TableCell>
             </TableRow>
           </TableHead>
 
@@ -135,12 +153,12 @@ function DailyReportDetailsPage(): JSX.Element {
                 key={row.deviceNumber}
                 sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
               >
-                <TableCell component="th" scope="row">
+                <TableCell component="th" scope="row" align="right">
                   {row.deviceNumber}
                 </TableCell>
-                <TableCell>{row.deviceName}</TableCell>
-                <TableCell>{row.status}</TableCell>
-                <TableCell>{row.dailyReport.status}</TableCell>
+                <TableCell align="right">{row.deviceName}</TableCell>
+                <TableCell align="right">{row.status}</TableCell>
+                <TableCell align="right">{row.dailyReport.status}</TableCell>
               </TableRow>
             ))}
           </TableBody>
