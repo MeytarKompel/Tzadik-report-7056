@@ -35,7 +35,7 @@ function DailyReportDetailsPage(): JSX.Element {
     useState<SortOption>("deviceNumberDesc");
   const [thirdSort, setThirdSort] = useState<SortOption>("");
   const [pendingChanges, setPendingChanges] = useState<
-    Record<string, "reported" | "not_reported">
+    Record<string, ReportStatus>
   >({});
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
@@ -59,13 +59,23 @@ function DailyReportDetailsPage(): JSX.Element {
       : "not_reported";
   }
 
-  function handleStatusChange(
-    deviceNumber: string,
-    newStatus: "reported" | "not_reported",
-  ) {
+  function getRowKey(row: any): string {
+    if (row?._id) return String(row._id);
+    if (row?.dailyReport?._id) return String(row.dailyReport._id);
+
+    const deviceNumber = String(row?.deviceNumber ?? "").trim();
+    const sheetId = String(row?.sheetId ?? id ?? "").trim();
+    const reportDate = String(row?.reportDate ?? date ?? "").trim();
+
+    return `${sheetId}__${reportDate}__${deviceNumber}`;
+  }
+
+  function handleStatusChange(row: any, newStatus: ReportStatus) {
+    const rowKey = getRowKey(row);
+
     setPendingChanges((prev) => ({
       ...prev,
-      [deviceNumber]: newStatus,
+      [rowKey]: newStatus,
     }));
 
     setSaveMessage("");
@@ -76,13 +86,20 @@ function DailyReportDetailsPage(): JSX.Element {
       setSaving(true);
       setSaveMessage("");
 
+      const rowsByKey = new Map<string, any>(
+        rows.map((row: any) => [getRowKey(row), row]),
+      );
+
       const entries = Object.entries(pendingChanges);
 
-      for (const [deviceNumber, status] of entries) {
+      for (const [rowKey, status] of entries) {
+        const row = rowsByKey.get(rowKey);
+        if (!row) continue;
+
         await axios.patch("http://localhost:3001/api/daily-reports/status", {
-          sheetId: id,
-          reportDate: date,
-          deviceNumber,
+          sheetId: row.sheetId ?? id,
+          reportDate: row.reportDate ?? date,
+          deviceNumber: row.deviceNumber,
           status,
         });
       }
@@ -93,7 +110,8 @@ function DailyReportDetailsPage(): JSX.Element {
         return {
           ...prev,
           rows: prev.rows.map((row: any) => {
-            const changedStatus = pendingChanges[row.deviceNumber];
+            const rowKey = getRowKey(row);
+            const changedStatus = pendingChanges[rowKey];
 
             if (!changedStatus) return row;
 
@@ -421,14 +439,14 @@ function DailyReportDetailsPage(): JSX.Element {
 
           <TableBody>
             {filteredAndSortedRows.map((row: any) => {
+              const rowKey = getRowKey(row);
               const savedStatus = getSavedStatus(row);
-              const currentStatus =
-                pendingChanges[row.deviceNumber] ?? savedStatus;
+              const currentStatus = pendingChanges[rowKey] ?? savedStatus;
               const isChanged = savedStatus !== currentStatus;
 
               return (
                 <TableRow
-                  key={row.deviceNumber}
+                  key={rowKey}
                   sx={{
                     "&:last-child td, &:last-child th": { border: 0 },
                     backgroundColor: isChanged ? "#fff8e1" : "inherit",
@@ -461,11 +479,7 @@ function DailyReportDetailsPage(): JSX.Element {
                         value={currentStatus}
                         onChange={(_, newValue) => {
                           if (!newValue) return;
-
-                          handleStatusChange(
-                            row.deviceNumber,
-                            newValue as ReportStatus,
-                          );
+                          handleStatusChange(row, newValue as ReportStatus);
                         }}
                         size="small"
                         sx={{
