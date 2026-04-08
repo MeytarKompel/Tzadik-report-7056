@@ -80,7 +80,9 @@ function AdminDashboardPage(): JSX.Element {
         err?.response?.data ||
         "טעינת המשתמשים נכשלה";
 
-      setUserError(typeof message === "string" ? message : "טעינת המשתמשים נכשלה");
+      setUserError(
+        typeof message === "string" ? message : "טעינת המשתמשים נכשלה",
+      );
     } finally {
       setIsUsersLoading(false);
     }
@@ -144,6 +146,17 @@ function AdminDashboardPage(): JSX.Element {
     await dailyReportService.createDaily(sheetId, date);
     setIsDailyDialogOpen(false);
   }
+
+  const sortedDevices = [...devices].sort((a, b) => {
+    if (a.isActive !== b.isActive) {
+      return a.isActive ? -1 : 1;
+    }
+
+    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+
+    return dateB - dateA;
+  });
 
   return (
     <div className="admin-dashboard">
@@ -252,8 +265,7 @@ function AdminDashboardPage(): JSX.Element {
               מנהלים: {users.filter((user) => user.role === "admin").length}
             </li>
             <li>
-              משקשים:{" "}
-              {users.filter((user) => user.role === "mashkash").length}
+              משקשים: {users.filter((user) => user.role === "mashkash").length}
             </li>
             <li>
               משתמשים רגילים:{" "}
@@ -277,7 +289,7 @@ function AdminDashboardPage(): JSX.Element {
         ) : devices.length === 0 ? (
           <p>אין מכשירים להצגה.</p>
         ) : (
-          <div className="admin-table-wrapper">
+          <div className="admin-table-wrapper admin-table-scroll">
             <table className="admin-table">
               <thead>
                 <tr>
@@ -288,7 +300,7 @@ function AdminDashboardPage(): JSX.Element {
                 </tr>
               </thead>
               <tbody>
-                {devices.map((device) => (
+                {sortedDevices.map((device) => (
                   <tr key={device._id || device.deviceNumber}>
                     <td>{device.deviceNumber}</td>
                     <td>{device.deviceName}</td>
@@ -342,8 +354,8 @@ function AdminDashboardPage(): JSX.Element {
                       {user.role === "admin"
                         ? "מנהל"
                         : user.role === "mashkash"
-                        ? "משקש"
-                        : "משתמש רגיל"}
+                          ? "משקש"
+                          : "משתמש רגיל"}
                     </td>
                   </tr>
                 ))}
