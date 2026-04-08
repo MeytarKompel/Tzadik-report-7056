@@ -61,43 +61,45 @@ function DailyReportDetailsPage(): JSX.Element {
   }
 
   function getRowKey(row: any): string {
-    if (row?._id) return String(row._id);
-    if (row?.dailyReport?._id) return String(row.dailyReport._id);
+    if (row?.inventoryItemId) return String(row.inventoryItemId);
+    if (row?.dailyReport?.id) return String(row.dailyReport.id);
 
     const deviceNumber = String(row?.deviceNumber ?? "").trim();
     const sheetId = String(row?.sheetId ?? id ?? "").trim();
-    const reportDate = String(row?.reportDate ?? date ?? "").trim();
+    const reportDate = String(
+      row?.dailyReport?.reportDate ?? date ?? "",
+    ).trim();
 
     return `${sheetId}__${reportDate}__${deviceNumber}`;
   }
 
-function getUnitName(row: any): string {
-  return row.unit ?? "לא משויך";
-}
+  function getUnitName(row: any): string {
+    return row?.unit ?? "לא משויך";
+  }
 
-function getUnitManagerName(row: any): string {
-  return row.unitResponsibleUser?.fullName ?? "לא ידוע";
-}
+  function getUnitManagerName(row: any): string {
+    return row?.unitResponsibleUser?.fullName ?? "לא ידוע";
+  }
 
-function getAssignedToName(row: any): string {
-  return row.assignedToUser?.fullName ?? "לא משויך";
-}
+  function getAssignedToName(row: any): string {
+    return row?.assignedToUser?.fullName ?? "לא משויך";
+  }
 
-function getLocation(row: any): string {
-  return row.dailyReport?.location ?? "לא צוין";
-}
+  function getLocation(row: any): string {
+    return row?.dailyReport?.location ?? "לא צוין";
+  }
 
-function getReportedBy(row: any): string {
-  return (
-    row.dailyReport?.reportedByName ??   // אחרי תיקון backend
-    row.dailyReport?.reportedBy ??       // fallback
-    "לא דווח"
-  );
-}
+  function getReportedBy(row: any): string {
+    return (
+      row?.dailyReport?.reportedByName ??
+      row?.dailyReport?.reportedBy ??
+      "לא דווח"
+    );
+  }
 
-function getNotes(row: any): string {
-  return "אין הערות"; // אין כרגע בשרת
-}
+  function getNotes(row: any): string {
+    return row?.dailyReport?.notes ?? "אין הערות";
+  }
 
   function handleStatusChange(row: any, newStatus: ReportStatus) {
     const rowKey = getRowKey(row);
@@ -127,7 +129,7 @@ function getNotes(row: any): string {
 
         await axios.patch("http://localhost:3001/api/daily-reports/status", {
           sheetId: row.sheetId ?? id,
-          reportDate: row.reportDate ?? date,
+          reportDate: row.dailyReport?.reportDate ?? date,
           deviceNumber: row.deviceNumber,
           status,
         });
@@ -482,12 +484,24 @@ function getNotes(row: any): string {
 
               const tooltipContent = (
                 <div dir="rtl" style={{ textAlign: "right", lineHeight: 1.8 }}>
-                  <div><strong>יחידה:</strong> {unitName}</div>
-                  <div><strong>אחראי יחידה:</strong> {unitManagerName}</div>
-                  <div><strong>מיקום:</strong> {location}</div>
-                  <div><strong>משויך ל:</strong> {assignedToName}</div>
-                  <div><strong>דווח על ידי:</strong> {reportedBy}</div>
-                  <div><strong>הערות:</strong> {notes}</div>
+                  <div>
+                    <strong>יחידה:</strong> {unitName}
+                  </div>
+                  <div>
+                    <strong>אחראי יחידה:</strong> {unitManagerName}
+                  </div>
+                  <div>
+                    <strong>מיקום:</strong> {location}
+                  </div>
+                  <div>
+                    <strong>משויך ל:</strong> {assignedToName}
+                  </div>
+                  <div>
+                    <strong>דווח על ידי:</strong> {reportedBy}
+                  </div>
+                  <div>
+                    <strong>הערות:</strong> {notes}
+                  </div>
                 </div>
               );
 
@@ -667,8 +681,7 @@ function getNotes(row: any): string {
                                 : "#f5f5f5",
                             borderLeft: "1px solid #e5e7eb",
                             transform: "none",
-                            opacity:
-                              currentStatus === "not_reported" ? 1 : 0.7,
+                            opacity: currentStatus === "not_reported" ? 1 : 0.7,
                             "& svg": {
                               opacity:
                                 currentStatus === "not_reported" ? 1 : 0.55,

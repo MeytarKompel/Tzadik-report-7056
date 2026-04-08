@@ -337,7 +337,8 @@ async function getInventorySheetFull(
                     status: dailyReport.status,
                     location: dailyReport.location ?? null,
                     reportedBy: dailyReport.reportedBy ?? null,
-                    reportedByName: reportedByUser?.fullName ?? null
+                    reportedByName: reportedByUser?.fullName ?? null,
+                    notes: dailyReport.notes ?? null
                 }
                 : {
                     id: null,
@@ -345,7 +346,8 @@ async function getInventorySheetFull(
                     status: "not_reported",
                     location: null,
                     reportedBy: null,
-                    reportedByName: null
+                    reportedByName: null,
+                    notes: null
                 },
 
             lastReportDate: item.lastReportDate ?? null,
