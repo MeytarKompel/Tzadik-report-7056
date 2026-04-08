@@ -116,9 +116,7 @@ function DailyReportDetailsPage(): JSX.Element {
   const filteredRows = rows.filter((row: any) => {
     const rowDeviceNumber = String(row.deviceNumber ?? "").trim();
     const rowDeviceName = String(row.deviceName ?? "").trim();
-
     const savedStatus = getSavedStatus(row);
-    const currentStatus = pendingChanges[row.deviceNumber] ?? savedStatus;
 
     const matchesDeviceNumber =
       searchDeviceNumber.trim() === "" ||
@@ -129,7 +127,7 @@ function DailyReportDetailsPage(): JSX.Element {
       rowDeviceName === filterDeviceName.trim();
 
     const matchesStatus =
-      filterStatus === "all" || currentStatus === filterStatus;
+      filterStatus === "all" || savedStatus === filterStatus;
 
     return matchesDeviceNumber && matchesDeviceName && matchesStatus;
   });
@@ -256,7 +254,10 @@ function DailyReportDetailsPage(): JSX.Element {
       </div>
 
       <TableContainer component={Paper} dir="rtl">
-        <Table sx={{ minWidth: 650, tableLayout: "fixed" }} aria-label="daily report table">
+        <Table
+          sx={{ minWidth: 650, tableLayout: "fixed" }}
+          aria-label="daily report table"
+        >
           <TableHead>
             <TableRow>
               <TableCell align="right" sx={{ fontWeight: "bold", width: 180 }}>
@@ -368,7 +369,9 @@ function DailyReportDetailsPage(): JSX.Element {
                                 ? "#fff"
                                 : "rgba(46, 125, 50, 0.45)",
                             backgroundColor:
-                              currentStatus === "reported" ? "#2e7d32" : "#f5f5f5",
+                              currentStatus === "reported"
+                                ? "#2e7d32"
+                                : "#f5f5f5",
                             borderLeft: "1px solid #e5e7eb",
                             transform: "none",
                             opacity: currentStatus === "reported" ? 1 : 0.7,
@@ -426,12 +429,15 @@ function DailyReportDetailsPage(): JSX.Element {
                                 ? "#fff"
                                 : "rgba(211, 47, 47, 0.45)",
                             backgroundColor:
-                              currentStatus === "not_reported" ? "#d32f2f" : "#f5f5f5",
+                              currentStatus === "not_reported"
+                                ? "#d32f2f"
+                                : "#f5f5f5",
                             borderLeft: "1px solid #e5e7eb",
                             transform: "none",
                             opacity: currentStatus === "not_reported" ? 1 : 0.7,
                             "& svg": {
-                              opacity: currentStatus === "not_reported" ? 1 : 0.55,
+                              opacity:
+                                currentStatus === "not_reported" ? 1 : 0.55,
                             },
                             "&:hover": {
                               backgroundColor:
