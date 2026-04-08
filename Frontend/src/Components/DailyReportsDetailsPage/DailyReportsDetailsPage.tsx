@@ -14,7 +14,9 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 
 type ReportStatus = "reported" | "not_reported";
+
 type SortOption =
+  | ""
   | "deviceNumberAsc"
   | "deviceNumberDesc"
   | "deviceNameAsc"
@@ -28,9 +30,12 @@ function DailyReportDetailsPage(): JSX.Element {
   const [searchDeviceNumber, setSearchDeviceNumber] = useState("");
   const [filterDeviceName, setFilterDeviceName] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<SortOption>("deviceNumberAsc");
+  const [primarySort, setPrimarySort] = useState<SortOption>("deviceNameAsc");
+  const [secondarySort, setSecondarySort] =
+    useState<SortOption>("deviceNumberDesc");
+  const [thirdSort, setThirdSort] = useState<SortOption>("");
   const [pendingChanges, setPendingChanges] = useState<
-    Record<string, ReportStatus>
+    Record<string, "reported" | "not_reported">
   >({});
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
@@ -54,7 +59,10 @@ function DailyReportDetailsPage(): JSX.Element {
       : "not_reported";
   }
 
-  function handleStatusChange(deviceNumber: string, newStatus: ReportStatus) {
+  function handleStatusChange(
+    deviceNumber: string,
+    newStatus: "reported" | "not_reported",
+  ) {
     setPendingChanges((prev) => ({
       ...prev,
       [deviceNumber]: newStatus,
@@ -120,6 +128,48 @@ function DailyReportDetailsPage(): JSX.Element {
     ),
   ) as string[];
 
+  function compareRowsBySortOption(
+    a: any,
+    b: any,
+    sortOption: SortOption,
+  ): number {
+    if (!sortOption) return 0;
+
+    const aDeviceNumber = Number(a.deviceNumber ?? 0);
+    const bDeviceNumber = Number(b.deviceNumber ?? 0);
+
+    const aDeviceName = String(a.deviceName ?? "").trim();
+    const bDeviceName = String(b.deviceName ?? "").trim();
+
+    const aSavedStatus = getSavedStatus(a);
+    const bSavedStatus = getSavedStatus(b);
+
+    switch (sortOption) {
+      case "deviceNumberAsc":
+        return aDeviceNumber - bDeviceNumber;
+
+      case "deviceNumberDesc":
+        return bDeviceNumber - aDeviceNumber;
+
+      case "deviceNameAsc":
+        return aDeviceName.localeCompare(bDeviceName, "he");
+
+      case "deviceNameDesc":
+        return bDeviceName.localeCompare(aDeviceName, "he");
+
+      case "reportedFirst":
+        if (aSavedStatus === bSavedStatus) return 0;
+        return aSavedStatus === "reported" ? -1 : 1;
+
+      case "notReportedFirst":
+        if (aSavedStatus === bSavedStatus) return 0;
+        return aSavedStatus === "not_reported" ? -1 : 1;
+
+      default:
+        return 0;
+    }
+  }
+
   const filteredAndSortedRows = useMemo(() => {
     const filteredRows = rows.filter((row: any) => {
       const rowDeviceNumber = String(row.deviceNumber ?? "").trim();
@@ -140,44 +190,31 @@ function DailyReportDetailsPage(): JSX.Element {
       return matchesDeviceNumber && matchesDeviceName && matchesStatus;
     });
 
+    const sortPriority: SortOption[] = [
+      primarySort,
+      secondarySort,
+      thirdSort,
+    ].filter(Boolean) as SortOption[];
+
     const sortedRows = [...filteredRows].sort((a: any, b: any) => {
-      const aDeviceNumber = Number(a.deviceNumber ?? 0);
-      const bDeviceNumber = Number(b.deviceNumber ?? 0);
-
-      const aDeviceName = String(a.deviceName ?? "").trim();
-      const bDeviceName = String(b.deviceName ?? "").trim();
-
-      const aSavedStatus = getSavedStatus(a);
-      const bSavedStatus = getSavedStatus(b);
-
-      switch (sortBy) {
-        case "deviceNumberAsc":
-          return aDeviceNumber - bDeviceNumber;
-
-        case "deviceNumberDesc":
-          return bDeviceNumber - aDeviceNumber;
-
-        case "deviceNameAsc":
-          return aDeviceName.localeCompare(bDeviceName, "he");
-
-        case "deviceNameDesc":
-          return bDeviceName.localeCompare(aDeviceName, "he");
-
-        case "reportedFirst":
-          if (aSavedStatus === bSavedStatus) return 0;
-          return aSavedStatus === "reported" ? -1 : 1;
-
-        case "notReportedFirst":
-          if (aSavedStatus === bSavedStatus) return 0;
-          return aSavedStatus === "not_reported" ? -1 : 1;
-
-        default:
-          return 0;
+      for (const sortOption of sortPriority) {
+        const result = compareRowsBySortOption(a, b, sortOption);
+        if (result !== 0) return result;
       }
+
+      return 0;
     });
 
     return sortedRows;
-  }, [rows, searchDeviceNumber, filterDeviceName, filterStatus, sortBy]);
+  }, [
+    rows,
+    searchDeviceNumber,
+    filterDeviceName,
+    filterStatus,
+    primarySort,
+    secondarySort,
+    thirdSort,
+  ]);
 
   if (!data) {
     return (
@@ -252,8 +289,8 @@ function DailyReportDetailsPage(): JSX.Element {
         </select>
 
         <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as SortOption)}
+          value={primarySort}
+          onChange={(e) => setPrimarySort(e.target.value as SortOption)}
           style={{
             padding: "10px",
             border: "1px solid #ccc",
@@ -261,6 +298,45 @@ function DailyReportDetailsPage(): JSX.Element {
             minWidth: "220px",
           }}
         >
+          <option value="">מיון ראשי</option>
+          <option value="deviceNumberAsc">מספר מכשיר: מהקטן לגדול</option>
+          <option value="deviceNumberDesc">מספר מכשיר: מהגדול לקטן</option>
+          <option value="deviceNameAsc">שם מכשיר: א-ת</option>
+          <option value="deviceNameDesc">שם מכשיר: ת-א</option>
+          <option value="reportedFirst">דווח קודם</option>
+          <option value="notReportedFirst">לא דווח קודם</option>
+        </select>
+
+        <select
+          value={secondarySort}
+          onChange={(e) => setSecondarySort(e.target.value as SortOption)}
+          style={{
+            padding: "10px",
+            border: "1px solid #ccc",
+            borderRadius: "8px",
+            minWidth: "220px",
+          }}
+        >
+          <option value="">מיון משני</option>
+          <option value="deviceNumberAsc">מספר מכשיר: מהקטן לגדול</option>
+          <option value="deviceNumberDesc">מספר מכשיר: מהגדול לקטן</option>
+          <option value="deviceNameAsc">שם מכשיר: א-ת</option>
+          <option value="deviceNameDesc">שם מכשיר: ת-א</option>
+          <option value="reportedFirst">דווח קודם</option>
+          <option value="notReportedFirst">לא דווח קודם</option>
+        </select>
+
+        <select
+          value={thirdSort}
+          onChange={(e) => setThirdSort(e.target.value as SortOption)}
+          style={{
+            padding: "10px",
+            border: "1px solid #ccc",
+            borderRadius: "8px",
+            minWidth: "220px",
+          }}
+        >
+          <option value="">מיון שלישי</option>
           <option value="deviceNumberAsc">מספר מכשיר: מהקטן לגדול</option>
           <option value="deviceNumberDesc">מספר מכשיר: מהגדול לקטן</option>
           <option value="deviceNameAsc">שם מכשיר: א-ת</option>
@@ -275,7 +351,9 @@ function DailyReportDetailsPage(): JSX.Element {
             setSearchDeviceNumber("");
             setFilterDeviceName("");
             setFilterStatus("all");
-            setSortBy("deviceNumberAsc");
+            setPrimarySort("deviceNameAsc");
+            setSecondarySort("deviceNumberDesc");
+            setThirdSort("");
           }}
           style={{
             padding: "10px 16px",
