@@ -60,7 +60,6 @@ async function createCleanInventorySheet(data: {
         throw new ClientError(403, "Only admin can create a new inventory sheet");
     }
 
-    // 🔹 יצירת גיליון (Mongo נותן ObjectId)
     const newSheet = await InventorySheetModel.create({
         sheetName: data.sheetName,
         description: data.description ?? "",
@@ -68,7 +67,6 @@ async function createCleanInventorySheet(data: {
         status: "active"
     });
 
-    // 🔥 יצירת inventory_items
     const devices = await DeviceModel.find({ isActive: true }).lean().exec();
 
     if (!devices.length) {
@@ -76,7 +74,7 @@ async function createCleanInventorySheet(data: {
     }
 
     const items = devices.map(device => ({
-        sheetId: newSheet._id, // ⚠️ חשוב: להשתמש ב־_id של Mongo
+        sheetId: newSheet._id,
         deviceNumber: device.deviceNumber,
         unit: "מחסן",
         status: "not_assigned",
@@ -240,15 +238,25 @@ async function getInventorySheetFull(
         .exec();
 
     const deviceNumbers = items.map(item => item.deviceNumber);
+
     const assignedUserIds = items
         .map(item => item.assignedToUserId)
         .filter(Boolean) as string[];
+
     const unitResponsibleUserIds = items
         .map(item => item.unitResponsibleUserId)
         .filter(Boolean) as string[];
 
-    const uniqueUserIds = Array.from(
-        new Set(assignedUserIds.concat(unitResponsibleUserIds))
+    const reportedByUserIds = dailyReports
+        .map(report => report.reportedBy)
+        .filter(Boolean) as string[];
+
+    const allUserIds = Array.from(
+        new Set(
+            assignedUserIds
+                .concat(unitResponsibleUserIds)
+                .concat(reportedByUserIds)
+        )
     );
 
     const [devices, users] = await Promise.all([
@@ -260,7 +268,7 @@ async function getInventorySheetFull(
             .exec(),
 
         UserModel.find({
-            personalNumber: { $in: uniqueUserIds },
+            personalNumber: { $in: allUserIds },
             isActive: true
         })
             .lean()
@@ -289,6 +297,10 @@ async function getInventorySheetFull(
 
         const unitResponsibleUser = item.unitResponsibleUserId
             ? usersMap.get(item.unitResponsibleUserId)
+            : null;
+
+        const reportedByUser = dailyReport?.reportedBy
+            ? usersMap.get(dailyReport.reportedBy)
             : null;
 
         return {
@@ -324,14 +336,16 @@ async function getInventorySheetFull(
                     reportDate: dailyReport.reportDate,
                     status: dailyReport.status,
                     location: dailyReport.location ?? null,
-                    reportedBy: dailyReport.reportedBy ?? null
+                    reportedBy: dailyReport.reportedBy ?? null,
+                    reportedByName: reportedByUser?.fullName ?? null
                 }
                 : {
                     id: null,
                     reportDate: effectiveReportDate,
                     status: "not_reported",
                     location: null,
-                    reportedBy: null
+                    reportedBy: null,
+                    reportedByName: null
                 },
 
             lastReportDate: item.lastReportDate ?? null,

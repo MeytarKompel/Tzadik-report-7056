@@ -10,6 +10,7 @@ import TableContainer from "@mui/material/TableContainer";
 import Paper from "@mui/material/Paper";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import Tooltip from "@mui/material/Tooltip";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 
@@ -69,6 +70,34 @@ function DailyReportDetailsPage(): JSX.Element {
 
     return `${sheetId}__${reportDate}__${deviceNumber}`;
   }
+
+function getUnitName(row: any): string {
+  return row.unit ?? "לא משויך";
+}
+
+function getUnitManagerName(row: any): string {
+  return row.unitResponsibleUser?.fullName ?? "לא ידוע";
+}
+
+function getAssignedToName(row: any): string {
+  return row.assignedToUser?.fullName ?? "לא משויך";
+}
+
+function getLocation(row: any): string {
+  return row.dailyReport?.location ?? "לא צוין";
+}
+
+function getReportedBy(row: any): string {
+  return (
+    row.dailyReport?.reportedByName ??   // אחרי תיקון backend
+    row.dailyReport?.reportedBy ??       // fallback
+    "לא דווח"
+  );
+}
+
+function getNotes(row: any): string {
+  return "אין הערות"; // אין כרגע בשרת
+}
 
   function handleStatusChange(row: any, newStatus: ReportStatus) {
     const rowKey = getRowKey(row);
@@ -429,7 +458,7 @@ function DailyReportDetailsPage(): JSX.Element {
                 שם מכשיר
               </TableCell>
               <TableCell align="right" sx={{ fontWeight: "bold", width: 220 }}>
-                סטטוס מכשיר
+                יחידה
               </TableCell>
               <TableCell align="right" sx={{ fontWeight: "bold", width: 300 }}>
                 דיווח
@@ -443,6 +472,24 @@ function DailyReportDetailsPage(): JSX.Element {
               const savedStatus = getSavedStatus(row);
               const currentStatus = pendingChanges[rowKey] ?? savedStatus;
               const isChanged = savedStatus !== currentStatus;
+
+              const unitName = getUnitName(row);
+              const unitManagerName = getUnitManagerName(row);
+              const location = getLocation(row);
+              const assignedToName = getAssignedToName(row);
+              const reportedBy = getReportedBy(row);
+              const notes = getNotes(row);
+
+              const tooltipContent = (
+                <div dir="rtl" style={{ textAlign: "right", lineHeight: 1.8 }}>
+                  <div><strong>יחידה:</strong> {unitName}</div>
+                  <div><strong>אחראי יחידה:</strong> {unitManagerName}</div>
+                  <div><strong>מיקום:</strong> {location}</div>
+                  <div><strong>משויך ל:</strong> {assignedToName}</div>
+                  <div><strong>דווח על ידי:</strong> {reportedBy}</div>
+                  <div><strong>הערות:</strong> {notes}</div>
+                </div>
+              );
 
               return (
                 <TableRow
@@ -463,7 +510,35 @@ function DailyReportDetailsPage(): JSX.Element {
 
                   <TableCell align="right">{row.deviceName}</TableCell>
 
-                  <TableCell align="right">{row.status}</TableCell>
+                  <TableCell align="right">
+                    <Tooltip
+                      title={tooltipContent}
+                      arrow
+                      placement="top"
+                      slotProps={{
+                        tooltip: {
+                          sx: {
+                            backgroundColor: "#1f2937",
+                            color: "#fff",
+                            fontSize: "0.9rem",
+                            padding: "10px 14px",
+                            borderRadius: "10px",
+                            maxWidth: 360,
+                          },
+                        },
+                      }}
+                    >
+                      <span
+                        style={{
+                          cursor: "help",
+                          textDecoration: "underline dotted",
+                          textUnderlineOffset: "3px",
+                        }}
+                      >
+                        {unitName}
+                      </span>
+                    </Tooltip>
+                  </TableCell>
 
                   <TableCell align="right">
                     <div
