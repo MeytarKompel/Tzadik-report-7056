@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Table from "@mui/material/Table";
@@ -13,14 +13,24 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 
+type ReportStatus = "reported" | "not_reported";
+type SortOption =
+  | "deviceNumberAsc"
+  | "deviceNumberDesc"
+  | "deviceNameAsc"
+  | "deviceNameDesc"
+  | "reportedFirst"
+  | "notReportedFirst";
+
 function DailyReportDetailsPage(): JSX.Element {
   const { id, date } = useParams();
   const [data, setData] = useState<any>(null);
   const [searchDeviceNumber, setSearchDeviceNumber] = useState("");
   const [filterDeviceName, setFilterDeviceName] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<SortOption>("deviceNumberAsc");
   const [pendingChanges, setPendingChanges] = useState<
-    Record<string, "reported" | "not_reported">
+    Record<string, ReportStatus>
   >({});
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
@@ -38,16 +48,13 @@ function DailyReportDetailsPage(): JSX.Element {
     setData(res.data);
   }
 
-  function getSavedStatus(row: any): "reported" | "not_reported" {
+  function getSavedStatus(row: any): ReportStatus {
     return row?.dailyReport?.status === "reported"
       ? "reported"
       : "not_reported";
   }
 
-  function handleStatusChange(
-    deviceNumber: string,
-    newStatus: "reported" | "not_reported",
-  ) {
+  function handleStatusChange(deviceNumber: string, newStatus: ReportStatus) {
     setPendingChanges((prev) => ({
       ...prev,
       [deviceNumber]: newStatus,
@@ -113,24 +120,64 @@ function DailyReportDetailsPage(): JSX.Element {
     ),
   ) as string[];
 
-  const filteredRows = rows.filter((row: any) => {
-    const rowDeviceNumber = String(row.deviceNumber ?? "").trim();
-    const rowDeviceName = String(row.deviceName ?? "").trim();
-    const savedStatus = getSavedStatus(row);
+  const filteredAndSortedRows = useMemo(() => {
+    const filteredRows = rows.filter((row: any) => {
+      const rowDeviceNumber = String(row.deviceNumber ?? "").trim();
+      const rowDeviceName = String(row.deviceName ?? "").trim();
+      const savedStatus = getSavedStatus(row);
 
-    const matchesDeviceNumber =
-      searchDeviceNumber.trim() === "" ||
-      rowDeviceNumber.includes(searchDeviceNumber.trim());
+      const matchesDeviceNumber =
+        searchDeviceNumber.trim() === "" ||
+        rowDeviceNumber.includes(searchDeviceNumber.trim());
 
-    const matchesDeviceName =
-      filterDeviceName.trim() === "" ||
-      rowDeviceName === filterDeviceName.trim();
+      const matchesDeviceName =
+        filterDeviceName.trim() === "" ||
+        rowDeviceName === filterDeviceName.trim();
 
-    const matchesStatus =
-      filterStatus === "all" || savedStatus === filterStatus;
+      const matchesStatus =
+        filterStatus === "all" || savedStatus === filterStatus;
 
-    return matchesDeviceNumber && matchesDeviceName && matchesStatus;
-  });
+      return matchesDeviceNumber && matchesDeviceName && matchesStatus;
+    });
+
+    const sortedRows = [...filteredRows].sort((a: any, b: any) => {
+      const aDeviceNumber = Number(a.deviceNumber ?? 0);
+      const bDeviceNumber = Number(b.deviceNumber ?? 0);
+
+      const aDeviceName = String(a.deviceName ?? "").trim();
+      const bDeviceName = String(b.deviceName ?? "").trim();
+
+      const aSavedStatus = getSavedStatus(a);
+      const bSavedStatus = getSavedStatus(b);
+
+      switch (sortBy) {
+        case "deviceNumberAsc":
+          return aDeviceNumber - bDeviceNumber;
+
+        case "deviceNumberDesc":
+          return bDeviceNumber - aDeviceNumber;
+
+        case "deviceNameAsc":
+          return aDeviceName.localeCompare(bDeviceName, "he");
+
+        case "deviceNameDesc":
+          return bDeviceName.localeCompare(aDeviceName, "he");
+
+        case "reportedFirst":
+          if (aSavedStatus === bSavedStatus) return 0;
+          return aSavedStatus === "reported" ? -1 : 1;
+
+        case "notReportedFirst":
+          if (aSavedStatus === bSavedStatus) return 0;
+          return aSavedStatus === "not_reported" ? -1 : 1;
+
+        default:
+          return 0;
+      }
+    });
+
+    return sortedRows;
+  }, [rows, searchDeviceNumber, filterDeviceName, filterStatus, sortBy]);
 
   if (!data) {
     return (
@@ -204,12 +251,31 @@ function DailyReportDetailsPage(): JSX.Element {
           <option value="not_reported">לא דווח</option>
         </select>
 
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as SortOption)}
+          style={{
+            padding: "10px",
+            border: "1px solid #ccc",
+            borderRadius: "8px",
+            minWidth: "220px",
+          }}
+        >
+          <option value="deviceNumberAsc">מספר מכשיר: מהקטן לגדול</option>
+          <option value="deviceNumberDesc">מספר מכשיר: מהגדול לקטן</option>
+          <option value="deviceNameAsc">שם מכשיר: א-ת</option>
+          <option value="deviceNameDesc">שם מכשיר: ת-א</option>
+          <option value="reportedFirst">דווח קודם</option>
+          <option value="notReportedFirst">לא דווח קודם</option>
+        </select>
+
         <button
           type="button"
           onClick={() => {
             setSearchDeviceNumber("");
             setFilterDeviceName("");
             setFilterStatus("all");
+            setSortBy("deviceNumberAsc");
           }}
           style={{
             padding: "10px 16px",
@@ -276,7 +342,7 @@ function DailyReportDetailsPage(): JSX.Element {
           </TableHead>
 
           <TableBody>
-            {filteredRows.map((row: any) => {
+            {filteredAndSortedRows.map((row: any) => {
               const savedStatus = getSavedStatus(row);
               const currentStatus =
                 pendingChanges[row.deviceNumber] ?? savedStatus;
@@ -320,7 +386,7 @@ function DailyReportDetailsPage(): JSX.Element {
 
                           handleStatusChange(
                             row.deviceNumber,
-                            newValue as "reported" | "not_reported",
+                            newValue as ReportStatus,
                           );
                         }}
                         size="small"
@@ -434,7 +500,8 @@ function DailyReportDetailsPage(): JSX.Element {
                                 : "#f5f5f5",
                             borderLeft: "1px solid #e5e7eb",
                             transform: "none",
-                            opacity: currentStatus === "not_reported" ? 1 : 0.7,
+                            opacity:
+                              currentStatus === "not_reported" ? 1 : 0.7,
                             "& svg": {
                               opacity:
                                 currentStatus === "not_reported" ? 1 : 0.55,
