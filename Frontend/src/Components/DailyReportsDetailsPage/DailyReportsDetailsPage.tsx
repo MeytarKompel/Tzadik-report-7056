@@ -8,6 +8,10 @@ import TableCell from "@mui/material/TableCell";
 import TableBody from "@mui/material/TableBody";
 import TableContainer from "@mui/material/TableContainer";
 import Paper from "@mui/material/Paper";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
 
 function DailyReportDetailsPage(): JSX.Element {
   const { id, date } = useParams();
@@ -32,6 +36,12 @@ function DailyReportDetailsPage(): JSX.Element {
     );
 
     setData(res.data);
+  }
+
+  function getSavedStatus(row: any): "reported" | "not_reported" {
+    return row?.dailyReport?.status === "reported"
+      ? "reported"
+      : "not_reported";
   }
 
   function handleStatusChange(
@@ -106,9 +116,9 @@ function DailyReportDetailsPage(): JSX.Element {
   const filteredRows = rows.filter((row: any) => {
     const rowDeviceNumber = String(row.deviceNumber ?? "").trim();
     const rowDeviceName = String(row.deviceName ?? "").trim();
-    const rowReportStatus = String(
-      pendingChanges[row.deviceNumber] ?? row.dailyReport?.status ?? "",
-    ).trim();
+
+    const savedStatus = getSavedStatus(row);
+    const currentStatus = pendingChanges[row.deviceNumber] ?? savedStatus;
 
     const matchesDeviceNumber =
       searchDeviceNumber.trim() === "" ||
@@ -119,12 +129,18 @@ function DailyReportDetailsPage(): JSX.Element {
       rowDeviceName === filterDeviceName.trim();
 
     const matchesStatus =
-      filterStatus === "all" || rowReportStatus === filterStatus;
+      filterStatus === "all" || currentStatus === filterStatus;
 
     return matchesDeviceNumber && matchesDeviceName && matchesStatus;
   });
 
-  if (!data) return <div dir="rtl" style={{ padding: "20px" }}>טוען...</div>;
+  if (!data) {
+    return (
+      <div dir="rtl" style={{ padding: "20px" }}>
+        טוען...
+      </div>
+    );
+  }
 
   const hasPendingChanges = Object.keys(pendingChanges).length > 0;
 
@@ -240,19 +256,19 @@ function DailyReportDetailsPage(): JSX.Element {
       </div>
 
       <TableContainer component={Paper} dir="rtl">
-        <Table sx={{ minWidth: 650 }} aria-label="daily report table">
+        <Table sx={{ minWidth: 650, tableLayout: "fixed" }} aria-label="daily report table">
           <TableHead>
             <TableRow>
-              <TableCell align="right" sx={{ fontWeight: "bold" }}>
+              <TableCell align="right" sx={{ fontWeight: "bold", width: 180 }}>
                 מספר מכשיר
               </TableCell>
-              <TableCell align="right" sx={{ fontWeight: "bold" }}>
+              <TableCell align="right" sx={{ fontWeight: "bold", width: 220 }}>
                 שם מכשיר
               </TableCell>
-              <TableCell align="right" sx={{ fontWeight: "bold" }}>
+              <TableCell align="right" sx={{ fontWeight: "bold", width: 220 }}>
                 סטטוס מכשיר
               </TableCell>
-              <TableCell align="right" sx={{ fontWeight: "bold" }}>
+              <TableCell align="right" sx={{ fontWeight: "bold", width: 300 }}>
                 דיווח
               </TableCell>
             </TableRow>
@@ -260,12 +276,10 @@ function DailyReportDetailsPage(): JSX.Element {
 
           <TableBody>
             {filteredRows.map((row: any) => {
+              const savedStatus = getSavedStatus(row);
               const currentStatus =
-                pendingChanges[row.deviceNumber] ??
-                row.dailyReport?.status ??
-                "not_reported";
-
-              const isChanged = row.dailyReport?.status !== currentStatus;
+                pendingChanges[row.deviceNumber] ?? savedStatus;
+              const isChanged = savedStatus !== currentStatus;
 
               return (
                 <TableRow
@@ -289,24 +303,135 @@ function DailyReportDetailsPage(): JSX.Element {
                   <TableCell align="right">{row.status}</TableCell>
 
                   <TableCell align="right">
-                    <select
-                      value={currentStatus}
-                      onChange={(e) =>
-                        handleStatusChange(
-                          row.deviceNumber,
-                          e.target.value as "reported" | "not_reported",
-                        )
-                      }
+                    <div
                       style={{
-                        padding: "6px 10px",
-                        borderRadius: "8px",
-                        border: isChanged ? "2px solid orange" : "1px solid #ccc",
-                        minWidth: "120px",
+                        width: "226px",
+                        minWidth: "226px",
+                        maxWidth: "226px",
+                        display: "inline-block",
                       }}
                     >
-                      <option value="reported">דווח</option>
-                      <option value="not_reported">לא דווח</option>
-                    </select>
+                      <ToggleButtonGroup
+                        exclusive
+                        value={currentStatus}
+                        onChange={(_, newValue) => {
+                          if (!newValue) return;
+
+                          handleStatusChange(
+                            row.deviceNumber,
+                            newValue as "reported" | "not_reported",
+                          );
+                        }}
+                        size="small"
+                        sx={{
+                          width: "226px",
+                          minWidth: "226px",
+                          maxWidth: "226px",
+                          height: "40px",
+                          display: "flex",
+                          flexDirection: "row",
+                          flexWrap: "nowrap",
+                          direction: "rtl",
+                          verticalAlign: "middle",
+                          border: "1px solid #d0d7de",
+                          borderRadius: "12px",
+                          overflow: "hidden",
+                          backgroundColor: "#fff",
+                          boxSizing: "border-box",
+                          "& .MuiToggleButtonGroup-grouped": {
+                            margin: 0,
+                            border: 0,
+                            borderRadius: "0 !important",
+                          },
+                        }}
+                      >
+                        <ToggleButton
+                          value="reported"
+                          disableRipple
+                          sx={{
+                            flex: "1 1 0",
+                            minWidth: 0,
+                            width: "113px",
+                            height: "40px",
+                            margin: 0,
+                            padding: "0 12px",
+                            gap: "6px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            whiteSpace: "nowrap",
+                            fontWeight: 600,
+                            lineHeight: 1,
+                            boxSizing: "border-box",
+                            color: "#2e7d32",
+                            backgroundColor: "#fff",
+                            borderLeft: "1px solid #e5e7eb",
+                            transform: "none",
+                            "&:hover": {
+                              backgroundColor: "#f6fbf7",
+                              transform: "none",
+                            },
+                            "&.Mui-selected": {
+                              color: "#fff",
+                              backgroundColor: "#2e7d32",
+                              borderLeft: "1px solid #e5e7eb",
+                            },
+                            "&.Mui-selected:hover": {
+                              backgroundColor: "#27662b",
+                            },
+                            "&.Mui-focusVisible": {
+                              outline: "none",
+                            },
+                          }}
+                        >
+                          <CheckCircleIcon fontSize="small" />
+                          דווח
+                        </ToggleButton>
+
+                        <ToggleButton
+                          value="not_reported"
+                          disableRipple
+                          sx={{
+                            flex: "1 1 0",
+                            minWidth: 0,
+                            width: "113px",
+                            height: "40px",
+                            margin: 0,
+                            padding: "0 12px",
+                            gap: "6px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            whiteSpace: "nowrap",
+                            fontWeight: 600,
+                            lineHeight: 1,
+                            boxSizing: "border-box",
+                            color: "#d32f2f",
+                            backgroundColor: "#fff",
+                            borderLeft: "1px solid #e5e7eb",
+                            transform: "none",
+                            "&:hover": {
+                              backgroundColor: "#fff6f6",
+                              transform: "none",
+                            },
+                            "&.Mui-selected": {
+                              color: "#fff",
+                              backgroundColor: "#d32f2f",
+                              borderLeft: "1px solid #e5e7eb",
+                            },
+                            "&.Mui-selected:hover": {
+                              backgroundColor: "#b71c1c",
+                            },
+                            "&.Mui-focusVisible": {
+                              outline: "none",
+                            },
+                          }}
+                        >
+                          <CancelIcon fontSize="small" />
+                          לא דווח
+                        </ToggleButton>
+                      </ToggleButtonGroup>
+                    </div>
                   </TableCell>
                 </TableRow>
               );
