@@ -85,6 +85,26 @@ router.patch("/daily-reports/not-reported", async (req: Request, res: Response, 
     }
 });
 
+// UPDATE REPORT STATUS
+router.patch("/daily-reports/status", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { sheetId, reportDate, deviceNumber, status } = req.body;
 
+        const updatedReport = await dailyReportLogic.updateReportStatus(
+            sheetId,
+            reportDate,
+            deviceNumber,
+            status
+        );
+
+        if (!updatedReport) {
+            return res.status(404).json({ message: "Daily report not found" });
+        }
+
+        res.json(updatedReport);
+    } catch (err) {
+        next(err);
+    }
+});
 
 export default router;

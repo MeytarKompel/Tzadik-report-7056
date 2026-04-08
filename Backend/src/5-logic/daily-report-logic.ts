@@ -1,4 +1,4 @@
-import DailyReportModel, { IDailyReport } from "../4-models/daily-report-model";
+import DailyReportModel, { DailyReportStatus, IDailyReport } from "../4-models/daily-report-model";
 import InventorySheetModel from "../4-models/inventory-sheet-model";
 import InventoryItemModel from "../4-models/inventory-item-model";
 import UserModel from "../4-models/user-model";
@@ -214,11 +214,31 @@ async function getDailyReportsBySheet(sheetId: string) {
     return DailyReportModel.find({ sheetId }).lean().exec();
 }
 
+async function updateReportStatus(
+    sheetId: string,
+    reportDate: string,
+    deviceNumber: string,
+    status: DailyReportStatus
+): Promise<IDailyReport | null> {
+    if (status !== "reported" && status !== "not_reported") {
+        throw new Error("Invalid status");
+    }
+
+    const updatedReport = await DailyReportModel.findOneAndUpdate(
+        { sheetId, reportDate, deviceNumber },
+        { status },
+        { new: true }
+    );
+
+    return updatedReport;
+}
+
 export default {
     createDailySheetFromInventorySheet,
     getDailyReportsByDate,
     getDailyReportsBySheetAndDate,
     reportDevice,
     markDeviceAsNotReported,
-    getDailyReportsBySheet
+    getDailyReportsBySheet,
+    updateReportStatus
 };

@@ -29,6 +29,42 @@ function DailyReportDetailsPage(): JSX.Element {
     setData(res.data);
   }
 
+  async function updateReportStatus(
+    deviceNumber: string,
+    newStatus: "reported" | "not_reported",
+  ) {
+    try {
+      await axios.patch("http://localhost:3001/api/daily-reports/status", {
+        sheetId: id,
+        reportDate: date,
+        deviceNumber,
+        status: newStatus,
+      });
+
+      setData((prev: any) => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          rows: prev.rows.map((row: any) =>
+            row.deviceNumber === deviceNumber
+              ? {
+                  ...row,
+                  dailyReport: {
+                    ...row.dailyReport,
+                    status: newStatus,
+                  },
+                }
+              : row,
+          ),
+        };
+      });
+    } catch (error) {
+      console.error("Failed to update report status", error);
+      alert("שינוי סטטוס הדיווח נכשל");
+    }
+  }
+
   const rows = data?.rows || [];
 
   const uniqueDeviceNames = Array.from(
@@ -57,11 +93,12 @@ function DailyReportDetailsPage(): JSX.Element {
 
     return matchesDeviceNumber && matchesDeviceName && matchesStatus;
   });
-  if (!data) return <div>טוען...</div>;
+
+  if (!data) return <div dir="rtl" style={{ padding: "20px" }}>טוען...</div>;
 
   return (
     <div dir="rtl" style={{ padding: "20px" }}>
-      <button onClick={() => navigate(-1)}>Back</button>
+      <button onClick={() => navigate(-1)}>חזור</button>
 
       <h1>{data.sheet.sheetName}</h1>
       <h3>📅 {data.reportDate}</h3>
@@ -104,6 +141,7 @@ function DailyReportDetailsPage(): JSX.Element {
             </option>
           ))}
         </select>
+
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
@@ -136,14 +174,23 @@ function DailyReportDetailsPage(): JSX.Element {
           נקה סינון
         </button>
       </div>
+
       <TableContainer component={Paper} dir="rtl">
-        <Table sx={{ minWidth: 650 }} aria-label="simple table">
+        <Table sx={{ minWidth: 650 }} aria-label="daily report table">
           <TableHead>
             <TableRow>
-              <TableCell align="right" sx={{ fontWeight: "bold" }}>מכשיר</TableCell>
-              <TableCell align="right" sx={{ fontWeight: "bold" }}>שם</TableCell>
-              <TableCell align="right" sx={{ fontWeight: "bold" }}>סטטוס</TableCell>
-              <TableCell align="right" sx={{ fontWeight: "bold" }}>דיווח</TableCell>
+              <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                מספר מכשיר
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                שם מכשיר
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                סטטוס מכשיר
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                דיווח
+              </TableCell>
             </TableRow>
           </TableHead>
 
@@ -153,12 +200,39 @@ function DailyReportDetailsPage(): JSX.Element {
                 key={row.deviceNumber}
                 sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
               >
-                <TableCell component="th" scope="row" align="right">
+                <TableCell
+                  align="right"
+                  component="th"
+                  scope="row"
+                  sx={{ direction: "ltr" }}
+                >
                   {row.deviceNumber}
                 </TableCell>
+
                 <TableCell align="right">{row.deviceName}</TableCell>
+
                 <TableCell align="right">{row.status}</TableCell>
-                <TableCell align="right">{row.dailyReport.status === "reported" ? "דווח" : "לא דווח"}</TableCell>
+
+                <TableCell align="right">
+                  <select
+                    value={row.dailyReport?.status ?? "not_reported"}
+                    onChange={(e) =>
+                      updateReportStatus(
+                        row.deviceNumber,
+                        e.target.value as "reported" | "not_reported",
+                      )
+                    }
+                    style={{
+                      padding: "6px 10px",
+                      borderRadius: "8px",
+                      border: "1px solid #ccc",
+                      minWidth: "120px",
+                    }}
+                  >
+                    <option value="reported">דווח</option>
+                    <option value="not_reported">לא דווח</option>
+                  </select>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
