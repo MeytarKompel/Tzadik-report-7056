@@ -158,7 +158,7 @@ function DailyReportDetailsPage(): JSX.Element {
                 </TableCell>
                 <TableCell align="right">{row.deviceName}</TableCell>
                 <TableCell align="right">{row.status}</TableCell>
-                <TableCell align="right">{row.dailyReport.status}</TableCell>
+                <TableCell align="right">{row.dailyReport.status === "reported" ? "דווח" : "לא דווח"}</TableCell>
               </TableRow>
             ))}
           </TableBody>
