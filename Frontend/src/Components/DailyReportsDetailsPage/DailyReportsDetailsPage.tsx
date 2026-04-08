@@ -15,6 +15,11 @@ function DailyReportDetailsPage(): JSX.Element {
   const [searchDeviceNumber, setSearchDeviceNumber] = useState("");
   const [filterDeviceName, setFilterDeviceName] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [pendingChanges, setPendingChanges] = useState<
+    Record<string, "reported" | "not_reported">
+  >({});
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,39 +34,62 @@ function DailyReportDetailsPage(): JSX.Element {
     setData(res.data);
   }
 
-  async function updateReportStatus(
+  function handleStatusChange(
     deviceNumber: string,
     newStatus: "reported" | "not_reported",
   ) {
+    setPendingChanges((prev) => ({
+      ...prev,
+      [deviceNumber]: newStatus,
+    }));
+
+    setSaveMessage("");
+  }
+
+  async function saveChanges() {
     try {
-      await axios.patch("http://localhost:3001/api/daily-reports/status", {
-        sheetId: id,
-        reportDate: date,
-        deviceNumber,
-        status: newStatus,
-      });
+      setSaving(true);
+      setSaveMessage("");
+
+      const entries = Object.entries(pendingChanges);
+
+      for (const [deviceNumber, status] of entries) {
+        await axios.patch("http://localhost:3001/api/daily-reports/status", {
+          sheetId: id,
+          reportDate: date,
+          deviceNumber,
+          status,
+        });
+      }
 
       setData((prev: any) => {
         if (!prev) return prev;
 
         return {
           ...prev,
-          rows: prev.rows.map((row: any) =>
-            row.deviceNumber === deviceNumber
-              ? {
-                  ...row,
-                  dailyReport: {
-                    ...row.dailyReport,
-                    status: newStatus,
-                  },
-                }
-              : row,
-          ),
+          rows: prev.rows.map((row: any) => {
+            const changedStatus = pendingChanges[row.deviceNumber];
+
+            if (!changedStatus) return row;
+
+            return {
+              ...row,
+              dailyReport: {
+                ...row.dailyReport,
+                status: changedStatus,
+              },
+            };
+          }),
         };
       });
+
+      setPendingChanges({});
+      setSaveMessage("השינויים נשמרו בהצלחה");
     } catch (error) {
-      console.error("Failed to update report status", error);
-      alert("שינוי סטטוס הדיווח נכשל");
+      console.error("Failed to save changes", error);
+      setSaveMessage("שמירת השינויים נכשלה");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -78,7 +106,9 @@ function DailyReportDetailsPage(): JSX.Element {
   const filteredRows = rows.filter((row: any) => {
     const rowDeviceNumber = String(row.deviceNumber ?? "").trim();
     const rowDeviceName = String(row.deviceName ?? "").trim();
-    const rowReportStatus = String(row.dailyReport?.status ?? "").trim();
+    const rowReportStatus = String(
+      pendingChanges[row.deviceNumber] ?? row.dailyReport?.status ?? "",
+    ).trim();
 
     const matchesDeviceNumber =
       searchDeviceNumber.trim() === "" ||
@@ -96,6 +126,8 @@ function DailyReportDetailsPage(): JSX.Element {
 
   if (!data) return <div dir="rtl" style={{ padding: "20px" }}>טוען...</div>;
 
+  const hasPendingChanges = Object.keys(pendingChanges).length > 0;
+
   return (
     <div dir="rtl" style={{ padding: "20px" }}>
       <button onClick={() => navigate(-1)}>חזור</button>
@@ -109,6 +141,7 @@ function DailyReportDetailsPage(): JSX.Element {
           gap: "12px",
           marginBottom: "20px",
           flexWrap: "wrap",
+          alignItems: "center",
         }}
       >
         <input
@@ -173,6 +206,37 @@ function DailyReportDetailsPage(): JSX.Element {
         >
           נקה סינון
         </button>
+
+        <button
+          type="button"
+          onClick={saveChanges}
+          disabled={!hasPendingChanges || saving}
+          style={{
+            padding: "10px 16px",
+            border: "none",
+            borderRadius: "8px",
+            cursor: !hasPendingChanges || saving ? "not-allowed" : "pointer",
+            opacity: !hasPendingChanges || saving ? 0.6 : 1,
+            fontWeight: "bold",
+          }}
+        >
+          {saving ? "שומר..." : "שמור שינויים"}
+        </button>
+
+        {hasPendingChanges && !saving && (
+          <span style={{ fontWeight: "bold" }}>יש שינויים שלא נשמרו</span>
+        )}
+
+        {saveMessage && (
+          <span
+            style={{
+              fontWeight: "bold",
+              color: saveMessage.includes("בהצלחה") ? "green" : "red",
+            }}
+          >
+            {saveMessage}
+          </span>
+        )}
       </div>
 
       <TableContainer component={Paper} dir="rtl">
@@ -195,46 +259,58 @@ function DailyReportDetailsPage(): JSX.Element {
           </TableHead>
 
           <TableBody>
-            {filteredRows.map((row: any) => (
-              <TableRow
-                key={row.deviceNumber}
-                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-              >
-                <TableCell
-                  align="right"
-                  component="th"
-                  scope="row"
-                  sx={{ direction: "ltr" }}
+            {filteredRows.map((row: any) => {
+              const currentStatus =
+                pendingChanges[row.deviceNumber] ??
+                row.dailyReport?.status ??
+                "not_reported";
+
+              const isChanged = row.dailyReport?.status !== currentStatus;
+
+              return (
+                <TableRow
+                  key={row.deviceNumber}
+                  sx={{
+                    "&:last-child td, &:last-child th": { border: 0 },
+                    backgroundColor: isChanged ? "#fff8e1" : "inherit",
+                  }}
                 >
-                  {row.deviceNumber}
-                </TableCell>
-
-                <TableCell align="right">{row.deviceName}</TableCell>
-
-                <TableCell align="right">{row.status}</TableCell>
-
-                <TableCell align="right">
-                  <select
-                    value={row.dailyReport?.status ?? "not_reported"}
-                    onChange={(e) =>
-                      updateReportStatus(
-                        row.deviceNumber,
-                        e.target.value as "reported" | "not_reported",
-                      )
-                    }
-                    style={{
-                      padding: "6px 10px",
-                      borderRadius: "8px",
-                      border: "1px solid #ccc",
-                      minWidth: "120px",
-                    }}
+                  <TableCell
+                    align="right"
+                    component="th"
+                    scope="row"
+                    sx={{ direction: "ltr" }}
                   >
-                    <option value="reported">דווח</option>
-                    <option value="not_reported">לא דווח</option>
-                  </select>
-                </TableCell>
-              </TableRow>
-            ))}
+                    {row.deviceNumber}
+                  </TableCell>
+
+                  <TableCell align="right">{row.deviceName}</TableCell>
+
+                  <TableCell align="right">{row.status}</TableCell>
+
+                  <TableCell align="right">
+                    <select
+                      value={currentStatus}
+                      onChange={(e) =>
+                        handleStatusChange(
+                          row.deviceNumber,
+                          e.target.value as "reported" | "not_reported",
+                        )
+                      }
+                      style={{
+                        padding: "6px 10px",
+                        borderRadius: "8px",
+                        border: isChanged ? "2px solid orange" : "1px solid #ccc",
+                        minWidth: "120px",
+                      }}
+                    >
+                      <option value="reported">דווח</option>
+                      <option value="not_reported">לא דווח</option>
+                    </select>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
