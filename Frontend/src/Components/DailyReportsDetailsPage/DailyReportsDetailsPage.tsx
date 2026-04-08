@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import Table from "@mui/material/Table";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TableCell from "@mui/material/TableCell";
+import TableBody from "@mui/material/TableBody";
+import Tab from "@mui/material/Tab";
+import TableContainer from "@mui/material/TableContainer";
+import Paper from "@mui/material/Paper";
 
 function DailyReportDetailsPage(): JSX.Element {
   const { id, date } = useParams();
@@ -15,7 +23,7 @@ function DailyReportDetailsPage(): JSX.Element {
 
   async function loadData() {
     const res = await axios.get(
-      `http://localhost:3001/api/inventory-sheets/${id}/full?reportDate=${date}`
+      `http://localhost:3001/api/inventory-sheets/${id}/full?reportDate=${date}`,
     );
 
     setData(res.data);
@@ -27,8 +35,8 @@ function DailyReportDetailsPage(): JSX.Element {
     new Set(
       rows
         .map((row: any) => String(row.deviceName ?? "").trim())
-        .filter((name: string) => name.length > 0)
-    )
+        .filter((name: string) => name.length > 0),
+    ),
   ) as string[];
 
   const filteredRows = rows.filter((row: any) => {
@@ -110,28 +118,34 @@ function DailyReportDetailsPage(): JSX.Element {
           נקה סינון
         </button>
       </div>
+      <TableContainer component={Paper}>
+        <Table sx={{ minWidth: 650 }} aria-label="simple table">
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ fontWeight: "bold" }}>מכשיר</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>שם</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>סטטוס</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>דיווח</TableCell>
+            </TableRow>
+          </TableHead>
 
-      <table>
-        <thead>
-          <tr>
-            <th>מכשיר</th>
-            <th>שם</th>
-            <th>סטטוס</th>
-            <th>דיווח</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {filteredRows.map((row: any) => (
-            <tr key={row.deviceNumber}>
-              <td>{row.deviceNumber}</td>
-              <td>{row.deviceName}</td>
-              <td>{row.status}</td>
-              <td>{row.dailyReport.status}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          <TableBody>
+            {filteredRows.map((row: any) => (
+              <TableRow
+                key={row.deviceNumber}
+                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+              >
+                <TableCell component="th" scope="row">
+                  {row.deviceNumber}
+                </TableCell>
+                <TableCell>{row.deviceName}</TableCell>
+                <TableCell>{row.status}</TableCell>
+                <TableCell>{row.dailyReport.status}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </div>
   );
 }
