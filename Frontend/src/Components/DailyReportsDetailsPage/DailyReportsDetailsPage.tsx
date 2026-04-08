@@ -363,18 +363,33 @@ function DailyReportDetailsPage(): JSX.Element {
                             fontWeight: 600,
                             lineHeight: 1,
                             boxSizing: "border-box",
-                            color: "#2e7d32",
-                            backgroundColor: "#fff",
+                            color:
+                              currentStatus === "reported"
+                                ? "#fff"
+                                : "rgba(46, 125, 50, 0.45)",
+                            backgroundColor:
+                              currentStatus === "reported" ? "#2e7d32" : "#f5f5f5",
                             borderLeft: "1px solid #e5e7eb",
                             transform: "none",
+                            opacity: currentStatus === "reported" ? 1 : 0.7,
+                            "& svg": {
+                              opacity: currentStatus === "reported" ? 1 : 0.55,
+                            },
                             "&:hover": {
-                              backgroundColor: "#f6fbf7",
+                              backgroundColor:
+                                currentStatus === "reported"
+                                  ? "#27662b"
+                                  : "#eeeeee",
                               transform: "none",
                             },
                             "&.Mui-selected": {
                               color: "#fff",
                               backgroundColor: "#2e7d32",
                               borderLeft: "1px solid #e5e7eb",
+                              opacity: 1,
+                            },
+                            "&.Mui-selected svg": {
+                              opacity: 1,
                             },
                             "&.Mui-selected:hover": {
                               backgroundColor: "#27662b",
@@ -406,18 +421,33 @@ function DailyReportDetailsPage(): JSX.Element {
                             fontWeight: 600,
                             lineHeight: 1,
                             boxSizing: "border-box",
-                            color: "#d32f2f",
-                            backgroundColor: "#fff",
+                            color:
+                              currentStatus === "not_reported"
+                                ? "#fff"
+                                : "rgba(211, 47, 47, 0.45)",
+                            backgroundColor:
+                              currentStatus === "not_reported" ? "#d32f2f" : "#f5f5f5",
                             borderLeft: "1px solid #e5e7eb",
                             transform: "none",
+                            opacity: currentStatus === "not_reported" ? 1 : 0.7,
+                            "& svg": {
+                              opacity: currentStatus === "not_reported" ? 1 : 0.55,
+                            },
                             "&:hover": {
-                              backgroundColor: "#fff6f6",
+                              backgroundColor:
+                                currentStatus === "not_reported"
+                                  ? "#b71c1c"
+                                  : "#eeeeee",
                               transform: "none",
                             },
                             "&.Mui-selected": {
                               color: "#fff",
                               backgroundColor: "#d32f2f",
                               borderLeft: "1px solid #e5e7eb",
+                              opacity: 1,
+                            },
+                            "&.Mui-selected svg": {
+                              opacity: 1,
                             },
                             "&.Mui-selected:hover": {
                               backgroundColor: "#b71c1c",
