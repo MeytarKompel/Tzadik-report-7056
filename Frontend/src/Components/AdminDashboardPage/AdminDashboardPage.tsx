@@ -4,16 +4,16 @@ import "./AdminDashboardPage.css";
 import AdminSummaryCard from "../../Components/AdminSummaryCard/AdminSummaryCard";
 import AddDeviceDialog from "../../Components/AddDeviceDialog/AddDeviceDialog";
 import AddUserDialog from "../../Components/AddUserDialog/AddUserDialog";
+import AddInventorySheetDialog from "../AddInventorySheetDialog/AddInventorySheetDialog";
+import CreateDailyReportDialog from "../CreateDailyReportDialog/CreateDailyReportDialog";
 import DeviceModel from "../../Models/DeviceModel";
 import UserModel from "../../Models/UserModel";
 import deviceService from "../../Services/DeviceService";
 import userService from "../../Services/UserService";
-import { useNavigate } from "react-router-dom";
 import inventoryService from "../../Services/InventoryService";
-import AddInventorySheetDialog from "../AddInventorySheetDialog/AddInventorySheetDialog";
-import axios from "axios";
 import dailyReportService from "../../Services/DailyReportService";
-import CreateDailyReportDialog from "../CreateDailyReportDialog/CreateDailyReportDialog";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 function AdminDashboardPage(): JSX.Element {
   const [isAddDeviceDialogOpen, setIsAddDeviceDialogOpen] =
@@ -23,21 +23,20 @@ function AdminDashboardPage(): JSX.Element {
 
   const [devices, setDevices] = useState<DeviceModel[]>([]);
   const [users, setUsers] = useState<UserModel[]>([]);
-
-  const navigate = useNavigate();
+  const [sheets, setSheets] = useState<any[]>([]);
 
   const [error, setError] = useState<string>("");
   const [userError, setUserError] = useState<string>("");
+  const [sheetMessage, setSheetMessage] = useState<string>("");
+  const [sheetError, setSheetError] = useState<string>("");
+
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isUsersLoading, setIsUsersLoading] = useState<boolean>(true);
 
-  const [sheetMessage, setSheetMessage] = useState<string>("");
-  const [sheetError, setSheetError] = useState<string>("");
-  const [isCreatingSheet, setIsCreatingSheet] = useState<boolean>(false);
+  const [isSheetDialogOpen, setIsSheetDialogOpen] = useState<boolean>(false);
+  const [isDailyDialogOpen, setIsDailyDialogOpen] = useState<boolean>(false);
 
-  const [isSheetDialogOpen, setIsSheetDialogOpen] = useState(false);
-  const [isDailyDialogOpen, setIsDailyDialogOpen] = useState(false);
-  const [sheets, setSheets] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadDevices();
@@ -81,7 +80,7 @@ function AdminDashboardPage(): JSX.Element {
         "טעינת המשתמשים נכשלה";
 
       setUserError(
-        typeof message === "string" ? message : "טעינת המשתמשים נכשלה",
+        typeof message === "string" ? message : "טעינת המשתמשים נכשלה"
       );
     } finally {
       setIsUsersLoading(false);
@@ -113,6 +112,14 @@ function AdminDashboardPage(): JSX.Element {
     setIsAddUserDialogOpen(false);
   }
 
+  function openSheetDialog(): void {
+    setIsSheetDialogOpen(true);
+  }
+
+  function closeSheetDialog(): void {
+    setIsSheetDialogOpen(false);
+  }
+
   async function saveDevice(device: DeviceModel): Promise<void> {
     await deviceService.addDevice(device);
     await loadDevices();
@@ -125,17 +132,9 @@ function AdminDashboardPage(): JSX.Element {
     setIsAddUserDialogOpen(false);
   }
 
-  function openSheetDialog() {
-    setIsSheetDialogOpen(true);
-  }
-
-  function closeSheetDialog() {
-    setIsSheetDialogOpen(false);
-  }
-
   async function saveSheet(
     sheetName: string,
-    description: string,
+    description: string
   ): Promise<void> {
     await inventoryService.createSheet(sheetName, description);
     await loadSheets();
@@ -193,176 +192,193 @@ function AdminDashboardPage(): JSX.Element {
         />
       </section>
 
-      <section className="admin-sections-grid">
-        <div className="admin-panel">
-          <h2>פעולות מהירות</h2>
+      <section className="admin-dashboard-content-grid">
+        <div className="admin-dashboard-column">
+          <div className="admin-panel">
+            <h2>פעולות מהירות</h2>
 
-          <div className="admin-actions">
-            <button type="button" onClick={openAddDeviceDialog}>
-              הוספת מכשיר חדש
-            </button>
+            <div className="admin-actions">
+              <button type="button" onClick={openAddDeviceDialog}>
+                הוספת מכשיר חדש
+              </button>
 
-            <button type="button" onClick={openAddUserDialog}>
-              הוספת משתמש חדש
-            </button>
+              <button type="button" onClick={openAddUserDialog}>
+                הוספת משתמש חדש
+              </button>
 
-            <button type="button" onClick={() => navigate("/users")}>
-              ניהול משתמשים
-            </button>
+              <button type="button" onClick={openSheetDialog}>
+                יצירת גיליון מלאי
+              </button>
 
-            <button type="button" onClick={openSheetDialog}>
-              יצירת גיליון מלאי
-            </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await loadSheets();
+                  setIsDailyDialogOpen(true);
+                }}
+              >
+                יצירת דיווח יומי
+              </button>
 
-            <button
-              type="button"
-              onClick={async () => {
-                await loadSheets();
-                setIsDailyDialogOpen(true);
-              }}
-            >
-              יצירת דיווח יומי
-            </button>
+              <button type="button">מעקב אחרי לא דווח</button>
 
-            <button type="button">מעקב אחרי לא דווח</button>
+              <button
+                type="button"
+                onClick={() => navigate("/import-devices")}
+              >
+                ייבוא מכשירים מ-CSV
+              </button>
 
-            <button type="button" onClick={() => navigate("/import-devices")}>
-              ייבוא מכשירים מ-CSV
-            </button>
+              <button type="button" onClick={() => navigate("/users")}>
+                ניהול משתמשים
+              </button>
 
-            <button type="button" onClick={() => navigate("/inventory-sheets")}>
-              מעבר לרשימת גיליונות
-            </button>
+              <button
+                type="button"
+                onClick={() => navigate("/inventory-sheets")}
+              >
+                מעבר לרשימת גיליונות
+              </button>
 
-            {sheetError && (
-              <Alert severity="error" variant="filled" sx={{ mt: 2 }}>
-                {sheetError}
+              {sheetError && (
+                <Alert severity="error" variant="filled" sx={{ mt: 2 }}>
+                  {sheetError}
+                </Alert>
+              )}
+
+              {sheetMessage && (
+                <Alert severity="success" variant="filled" sx={{ mt: 2 }}>
+                  {sheetMessage}
+                </Alert>
+              )}
+            </div>
+          </div>
+
+          <div className="admin-panel">
+            <h2>רשימת מכשירים</h2>
+
+            {error && (
+              <Alert severity="error" variant="filled" sx={{ mb: 2 }}>
+                {error}
               </Alert>
             )}
 
-            {sheetMessage && (
-              <Alert severity="success" variant="filled" sx={{ mt: 2 }}>
-                {sheetMessage}
-              </Alert>
+            {isLoading ? (
+              <p>טוען מכשירים...</p>
+            ) : sortedDevices.length === 0 ? (
+              <p>אין מכשירים להצגה.</p>
+            ) : (
+              <div className="admin-table-wrapper admin-table-scroll">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>מספר מכשיר</th>
+                      <th>שם מכשיר</th>
+                      <th>פעיל</th>
+                      <th>נוצר בתאריך</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedDevices.map((device) => (
+                      <tr key={device._id || device.deviceNumber}>
+                        <td>{device.deviceNumber}</td>
+                        <td>{device.deviceName}</td>
+                        <td>{device.isActive ? "כן" : "לא"}</td>
+                        <td>
+                          {device.createdAt
+                            ? new Date(device.createdAt).toLocaleDateString(
+                                "he-IL"
+                              )
+                            : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>
 
-        <div className="admin-panel">
-          <h2>סטטוס מערכת</h2>
-          <ul className="admin-status-list">
-            <li>סה״כ מכשירים במערכת: {devices.length}</li>
-            <li>
-              מכשירים פעילים:{" "}
-              {devices.filter((device) => device.isActive).length}
-            </li>
-            <li>
-              מכשירים לא פעילים:{" "}
-              {devices.filter((device) => !device.isActive).length}
-            </li>
-            <li>סה״כ משתמשים במערכת: {users.length}</li>
-            <li>
-              מנהלים: {users.filter((user) => user.role === "admin").length}
-            </li>
-            <li>
-              משקשים: {users.filter((user) => user.role === "mashkash").length}
-            </li>
-            <li>
-              משתמשים רגילים:{" "}
-              {users.filter((user) => user.role === "regular").length}
-            </li>
-          </ul>
+        <div className="admin-dashboard-column">
+          <div className="admin-panel">
+            <h2>סטטוס מערכת</h2>
+            <ul className="admin-status-list">
+              <li>סה״כ מכשירים במערכת: {devices.length}</li>
+              <li>
+                מכשירים פעילים:{" "}
+                {devices.filter((device) => device.isActive).length}
+              </li>
+              <li>
+                מכשירים לא פעילים:{" "}
+                {devices.filter((device) => !device.isActive).length}
+              </li>
+              <li>סה״כ משתמשים במערכת: {users.length}</li>
+              <li>
+                מנהלים: {users.filter((user) => user.role === "admin").length}
+              </li>
+              <li>
+                אחראי יחידה:{" "}
+                {
+                  users.filter(
+                    (user) => user.role === "mashkash"
+                  ).length
+                }
+              </li>
+              <li>
+                משתמשים רגילים:{" "}
+                {users.filter((user) => user.role === "regular").length}
+              </li>
+            </ul>
+          </div>
+
+          <div className="admin-panel">
+            <h2>רשימת משתמשים</h2>
+
+            {userError && (
+              <Alert severity="error" variant="filled" sx={{ mb: 2 }}>
+                {userError}
+              </Alert>
+            )}
+
+            {isUsersLoading ? (
+              <p>טוען משתמשים...</p>
+            ) : users.length === 0 ? (
+              <p>אין משתמשים להצגה.</p>
+            ) : (
+              <div className="admin-table-wrapper admin-table-scroll">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>מספר אישי</th>
+                      <th>שם מלא</th>
+                      <th>טלפון</th>
+                      <th>יחידה</th>
+                      <th>סוג משתמש</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((user) => (
+                      <tr key={user.personalNumber || user.personalNumber}>
+                        <td>{user.personalNumber}</td>
+                        <td>{user.fullName}</td>
+                        <td>{user.phone}</td>
+                        <td>{user.unit || "-"}</td>
+                        <td>
+                          {user.role === "admin"
+                            ? "מנהל"
+                            : user.role === "mashkash"
+                            ? "אחראי יחידה"
+                            : "רגיל"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
-      </section>
-
-      <section className="admin-panel">
-        <h2>רשימת מכשירים</h2>
-
-        {error && (
-          <Alert severity="error" variant="filled" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        {isLoading ? (
-          <p>טוען מכשירים...</p>
-        ) : devices.length === 0 ? (
-          <p>אין מכשירים להצגה.</p>
-        ) : (
-          <div className="admin-table-wrapper admin-table-scroll">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>מספר מכשיר</th>
-                  <th>שם מכשיר</th>
-                  <th>פעיל</th>
-                  <th>נוצר בתאריך</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedDevices.map((device) => (
-                  <tr key={device._id || device.deviceNumber}>
-                    <td>{device.deviceNumber}</td>
-                    <td>{device.deviceName}</td>
-                    <td>{device.isActive ? "כן" : "לא"}</td>
-                    <td>
-                      {device.createdAt
-                        ? new Date(device.createdAt).toLocaleDateString("he-IL")
-                        : "-"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      <section className="admin-panel">
-        <h2>רשימת משתמשים</h2>
-
-        {userError && (
-          <Alert severity="error" variant="filled" sx={{ mb: 2 }}>
-            {userError}
-          </Alert>
-        )}
-
-        {isUsersLoading ? (
-          <p>טוען משתמשים...</p>
-        ) : users.length === 0 ? (
-          <p>אין משתמשים להצגה.</p>
-        ) : (
-          <div className="admin-table-wrapper">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>מספר אישי</th>
-                  <th>שם מלא</th>
-                  <th>טלפון</th>
-                  <th>יחידה</th>
-                  <th>סוג משתמש</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.personalNumber || user.personalNumber}>
-                    <td>{user.personalNumber}</td>
-                    <td>{user.fullName}</td>
-                    <td>{user.phone}</td>
-                    <td>{user.unit || "-"}</td>
-                    <td>
-                      {user.role === "admin"
-                        ? "מנהל"
-                        : user.role === "mashkash"
-                          ? "משקש"
-                          : "משתמש רגיל"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </section>
 
       <AddDeviceDialog
