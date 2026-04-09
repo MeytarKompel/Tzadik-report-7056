@@ -11,6 +11,9 @@ import Paper from "@mui/material/Paper";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Tooltip from "@mui/material/Tooltip";
+import FormControl from "@mui/material/FormControl";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 
@@ -25,9 +28,45 @@ type SortOption =
   | "reportedFirst"
   | "notReportedFirst";
 
+type DailyReportRow = {
+  inventoryItemId: string;
+  sheetId: string;
+  deviceNumber: string;
+  deviceName: string | null;
+  unit: string | null;
+  status: string | null;
+  assignedToUser: {
+    personalNumber: string;
+    fullName: string | null;
+    phone: string | null;
+  } | null;
+  unitResponsibleUser: {
+    personalNumber: string;
+    fullName: string | null;
+    phone: string | null;
+  } | null;
+  dailyReport: {
+    id: string | null;
+    reportDate: string;
+    status: ReportStatus;
+    location: string | null;
+    reportedBy: string | null;
+    reportedByName?: string | null;
+    notes?: string | null;
+  };
+};
+
+type DailyReportResponse = {
+  sheet: {
+    sheetName: string;
+  };
+  reportDate: string;
+  rows: DailyReportRow[];
+};
+
 function DailyReportDetailsPage(): JSX.Element {
   const { id, date } = useParams();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<DailyReportResponse | null>(null);
   const [searchDeviceNumber, setSearchDeviceNumber] = useState("");
   const [filterDeviceName, setFilterDeviceName] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -38,6 +77,9 @@ function DailyReportDetailsPage(): JSX.Element {
   const [pendingChanges, setPendingChanges] = useState<
     Record<string, ReportStatus>
   >({});
+  const [pendingUnitChanges, setPendingUnitChanges] = useState<
+    Record<string, string>
+  >({});
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const navigate = useNavigate();
@@ -47,61 +89,57 @@ function DailyReportDetailsPage(): JSX.Element {
   }, [id, date]);
 
   async function loadData() {
-    const res = await axios.get(
+    const res = await axios.get<DailyReportResponse>(
       `http://localhost:3001/api/inventory-sheets/${id}/full?reportDate=${date}`,
     );
 
     setData(res.data);
   }
 
-  function getSavedStatus(row: any): ReportStatus {
-    return row?.dailyReport?.status === "reported"
-      ? "reported"
-      : "not_reported";
+  function getSavedStatus(row: DailyReportRow): ReportStatus {
+    return row.dailyReport.status === "reported" ? "reported" : "not_reported";
   }
 
-  function getRowKey(row: any): string {
-    if (row?.inventoryItemId) return String(row.inventoryItemId);
-    if (row?.dailyReport?.id) return String(row.dailyReport.id);
+  function getRowKey(row: DailyReportRow): string {
+    if (row.inventoryItemId) return String(row.inventoryItemId);
+    if (row.dailyReport?.id) return String(row.dailyReport.id);
 
-    const deviceNumber = String(row?.deviceNumber ?? "").trim();
-    const sheetId = String(row?.sheetId ?? id ?? "").trim();
-    const reportDate = String(
-      row?.dailyReport?.reportDate ?? date ?? "",
-    ).trim();
+    const deviceNumber = String(row.deviceNumber ?? "").trim();
+    const sheetId = String(row.sheetId ?? id ?? "").trim();
+    const reportDate = String(row.dailyReport?.reportDate ?? date ?? "").trim();
 
     return `${sheetId}__${reportDate}__${deviceNumber}`;
   }
 
-  function getUnitName(row: any): string {
-    return row?.unit ?? "לא משויך";
+  function getUnitName(row: DailyReportRow): string {
+    return row.unit ?? "לא משויך";
   }
 
-  function getUnitManagerName(row: any): string {
-    return row?.unitResponsibleUser?.fullName ?? "לא ידוע";
+  function getUnitManagerName(row: DailyReportRow): string {
+    return row.unitResponsibleUser?.fullName ?? "לא ידוע";
   }
 
-  function getAssignedToName(row: any): string {
-    return row?.assignedToUser?.fullName ?? "לא משויך";
+  function getAssignedToName(row: DailyReportRow): string {
+    return row.assignedToUser?.fullName ?? "לא משויך";
   }
 
-  function getLocation(row: any): string {
-    return row?.dailyReport?.location ?? "לא צוין";
+  function getLocation(row: DailyReportRow): string {
+    return row.dailyReport?.location ?? "לא צוין";
   }
 
-  function getReportedBy(row: any): string {
+  function getReportedBy(row: DailyReportRow): string {
     return (
-      row?.dailyReport?.reportedByName ??
-      row?.dailyReport?.reportedBy ??
+      row.dailyReport?.reportedByName ??
+      row.dailyReport?.reportedBy ??
       "לא דווח"
     );
   }
 
-  function getNotes(row: any): string {
-    return row?.dailyReport?.notes ?? "אין הערות";
+  function getNotes(row: DailyReportRow): string {
+    return row.dailyReport?.notes ?? "אין הערות";
   }
 
-  function handleStatusChange(row: any, newStatus: ReportStatus) {
+  function handleStatusChange(row: DailyReportRow, newStatus: ReportStatus) {
     const rowKey = getRowKey(row);
 
     setPendingChanges((prev) => ({
@@ -112,18 +150,29 @@ function DailyReportDetailsPage(): JSX.Element {
     setSaveMessage("");
   }
 
+  function handleUnitChange(row: DailyReportRow, newUnit: string) {
+    const rowKey = getRowKey(row);
+
+    setPendingUnitChanges((prev) => ({
+      ...prev,
+      [rowKey]: newUnit,
+    }));
+
+    setSaveMessage("");
+  }
+
   async function saveChanges() {
     try {
       setSaving(true);
       setSaveMessage("");
 
-      const rowsByKey = new Map<string, any>(
-        rows.map((row: any) => [getRowKey(row), row]),
+      const rowsByKey = new Map<string, DailyReportRow>(
+        rows.map((row) => [getRowKey(row), row]),
       );
 
-      const entries = Object.entries(pendingChanges);
+      const statusEntries = Object.entries(pendingChanges);
 
-      for (const [rowKey, status] of entries) {
+      for (const [rowKey, status] of statusEntries) {
         const row = rowsByKey.get(rowKey);
         if (!row) continue;
 
@@ -135,29 +184,44 @@ function DailyReportDetailsPage(): JSX.Element {
         });
       }
 
-      setData((prev: any) => {
+      const unitEntries = Object.entries(pendingUnitChanges);
+
+      for (const [rowKey, unit] of unitEntries) {
+        const row = rowsByKey.get(rowKey);
+        if (!row) continue;
+
+        await axios.put(
+          `http://localhost:3001/api/inventory-items/${row.inventoryItemId}`,
+          { unit },
+        );
+      }
+
+      setData((prev) => {
         if (!prev) return prev;
 
         return {
           ...prev,
-          rows: prev.rows.map((row: any) => {
+          rows: prev.rows.map((row) => {
             const rowKey = getRowKey(row);
             const changedStatus = pendingChanges[rowKey];
-
-            if (!changedStatus) return row;
+            const changedUnit = pendingUnitChanges[rowKey];
 
             return {
               ...row,
-              dailyReport: {
-                ...row.dailyReport,
-                status: changedStatus,
-              },
+              unit: changedUnit ?? row.unit,
+              dailyReport: changedStatus
+                ? {
+                    ...row.dailyReport,
+                    status: changedStatus,
+                  }
+                : row.dailyReport,
             };
           }),
         };
       });
 
       setPendingChanges({});
+      setPendingUnitChanges({});
       setSaveMessage("השינויים נשמרו בהצלחה");
     } catch (error) {
       console.error("Failed to save changes", error);
@@ -167,19 +231,27 @@ function DailyReportDetailsPage(): JSX.Element {
     }
   }
 
-  const rows = data?.rows || [];
+  const rows: DailyReportRow[] = data?.rows ?? [];
 
   const uniqueDeviceNames = Array.from(
     new Set(
       rows
-        .map((row: any) => String(row.deviceName ?? "").trim())
-        .filter((name: string) => name.length > 0),
+        .map((row) => String(row.deviceName ?? "").trim())
+        .filter((name) => name.length > 0),
+    ),
+  ) as string[];
+
+  const uniqueUnits = Array.from(
+    new Set(
+      rows
+        .map((row) => String(row.unit ?? "").trim())
+        .filter((unit) => unit.length > 0),
     ),
   ) as string[];
 
   function compareRowsBySortOption(
-    a: any,
-    b: any,
+    a: DailyReportRow,
+    b: DailyReportRow,
     sortOption: SortOption,
   ): number {
     if (!sortOption) return 0;
@@ -220,7 +292,7 @@ function DailyReportDetailsPage(): JSX.Element {
   }
 
   const filteredAndSortedRows = useMemo(() => {
-    const filteredRows = rows.filter((row: any) => {
+    const filteredRows = rows.filter((row) => {
       const rowDeviceNumber = String(row.deviceNumber ?? "").trim();
       const rowDeviceName = String(row.deviceName ?? "").trim();
       const savedStatus = getSavedStatus(row);
@@ -245,7 +317,7 @@ function DailyReportDetailsPage(): JSX.Element {
       thirdSort,
     ].filter(Boolean) as SortOption[];
 
-    const sortedRows = [...filteredRows].sort((a: any, b: any) => {
+    const sortedRows = [...filteredRows].sort((a, b) => {
       for (const sortOption of sortPriority) {
         const result = compareRowsBySortOption(a, b, sortOption);
         if (result !== 0) return result;
@@ -273,7 +345,9 @@ function DailyReportDetailsPage(): JSX.Element {
     );
   }
 
-  const hasPendingChanges = Object.keys(pendingChanges).length > 0;
+  const hasPendingChanges =
+    Object.keys(pendingChanges).length > 0 ||
+    Object.keys(pendingUnitChanges).length > 0;
 
   return (
     <div dir="rtl" style={{ padding: "20px" }}>
@@ -469,11 +543,13 @@ function DailyReportDetailsPage(): JSX.Element {
           </TableHead>
 
           <TableBody>
-            {filteredAndSortedRows.map((row: any) => {
+            {filteredAndSortedRows.map((row) => {
               const rowKey = getRowKey(row);
               const savedStatus = getSavedStatus(row);
               const currentStatus = pendingChanges[rowKey] ?? savedStatus;
-              const isChanged = savedStatus !== currentStatus;
+              const currentUnit = pendingUnitChanges[rowKey] ?? (row.unit ?? "");
+              const isChanged =
+                savedStatus !== currentStatus || currentUnit !== (row.unit ?? "");
 
               const unitName = getUnitName(row);
               const unitManagerName = getUnitManagerName(row);
@@ -485,7 +561,7 @@ function DailyReportDetailsPage(): JSX.Element {
               const tooltipContent = (
                 <div dir="rtl" style={{ textAlign: "right", lineHeight: 1.8 }}>
                   <div>
-                    <strong>יחידה:</strong> {unitName}
+                    <strong>יחידה:</strong> {currentUnit || unitName}
                   </div>
                   <div>
                     <strong>אחראי יחידה:</strong> {unitManagerName}
@@ -525,33 +601,67 @@ function DailyReportDetailsPage(): JSX.Element {
                   <TableCell align="right">{row.deviceName}</TableCell>
 
                   <TableCell align="right">
-                    <Tooltip
-                      title={tooltipContent}
-                      arrow
-                      placement="top"
-                      slotProps={{
-                        tooltip: {
-                          sx: {
-                            backgroundColor: "#1f2937",
-                            color: "#fff",
-                            fontSize: "0.9rem",
-                            padding: "10px 14px",
-                            borderRadius: "10px",
-                            maxWidth: 360,
-                          },
-                        },
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                        alignItems: "flex-start",
                       }}
                     >
-                      <span
-                        style={{
-                          cursor: "help",
-                          textDecoration: "underline dotted",
-                          textUnderlineOffset: "3px",
+                      <FormControl size="small" sx={{ minWidth: 140 }}>
+                        <Select
+                          value={currentUnit}
+                          onChange={(e) =>
+                            handleUnitChange(row, e.target.value as string)
+                          }
+                          displayEmpty
+                          sx={{
+                            borderRadius: "8px",
+                            backgroundColor: "#fff",
+                            height: "36px",
+                            ".MuiSelect-select": {
+                              py: "6px",
+                              textAlign: "right",
+                            },
+                          }}
+                        >
+                          {uniqueUnits.map((unit) => (
+                            <MenuItem key={unit} value={unit}>
+                              {unit}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+
+                      <Tooltip
+                        title={tooltipContent}
+                        arrow
+                        placement="top"
+                        slotProps={{
+                          tooltip: {
+                            sx: {
+                              backgroundColor: "#1f2937",
+                              color: "#fff",
+                              fontSize: "0.9rem",
+                              padding: "10px 14px",
+                              borderRadius: "10px",
+                              maxWidth: 360,
+                            },
+                          },
                         }}
                       >
-                        {unitName}
-                      </span>
-                    </Tooltip>
+                        <span
+                          style={{
+                            cursor: "help",
+                            textDecoration: "underline dotted",
+                            textUnderlineOffset: "3px",
+                          }}
+                        >
+                          {currentUnit || unitName}
+                        </span>
+                      </Tooltip>
+                    </div>
                   </TableCell>
 
                   <TableCell align="right">
