@@ -318,7 +318,7 @@ function AdminDashboardPage(): JSX.Element {
                 מנהלים: {users.filter((user) => user.role === "admin").length}
               </li>
               <li>
-                אחראי יחידה:{" "}
+                משקש:{" "}
                 {
                   users.filter(
                     (user) => user.role === "mashkash"
@@ -368,7 +368,7 @@ function AdminDashboardPage(): JSX.Element {
                           {user.role === "admin"
                             ? "מנהל"
                             : user.role === "mashkash"
-                            ? "אחראי יחידה"
+                            ? "משקש"
                             : "רגיל"}
                         </td>
                       </tr>
