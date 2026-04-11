@@ -5,6 +5,7 @@ import UserModel from "../4-models/user-model";
 import DeviceModel from "../4-models/device-model";
 import ReportModel from "../4-models/report-model";
 import ClientError from "../2-utils/client-error";
+import DailyReportModel from "../4-models/daily-report-model";
 
 async function getAllInventoryItems(): Promise<IInventoryItem[]> {
   return InventoryItemModel.find({ isDeleted: false })
@@ -291,7 +292,6 @@ async function updateInventoryItem(
     return null;
   }
 
-  // 🔹 בדיקת מכשיר
   if (item.deviceNumber) {
     const existingDevice = await DeviceModel.findOne({
       deviceNumber: item.deviceNumber,
@@ -303,13 +303,17 @@ async function updateInventoryItem(
     }
   }
 
-  // 🔥 שינוי יחידה + אחראי יחידה + איפוס שיוך
+  let unitChanged = false;
+  let nextUnit = currentItem.unit;
+
   if (item.unit !== undefined) {
-    const nextUnit = String(item.unit).trim();
+    nextUnit = String(item.unit).trim();
 
     if (!nextUnit) {
       throw new ClientError(400, "Unit is required");
     }
+
+    unitChanged = nextUnit !== currentItem.unit;
 
     if (nextUnit === "מחסן") {
       item.unitResponsibleUserId = "00000";
@@ -330,13 +334,11 @@ async function updateInventoryItem(
       item.unitResponsibleUserId = responsibleUser.personalNumber;
     }
 
-    // 🔥 איפוס שיוך למשתמש (כמו שביקשת)
     item.assignedToUserId = null;
     item.signedAt = null;
     item.status = "not_assigned";
   }
 
-  // 🔹 בדיקת אחראי יחידה
   if (item.unitResponsibleUserId && item.unitResponsibleUserId !== "00000") {
     const responsibleUser = await UserModel.findOne({
       personalNumber: item.unitResponsibleUserId,
@@ -357,11 +359,9 @@ async function updateInventoryItem(
 
   const updatedStatus = item.status ?? currentItem.status;
 
-  // 🔹 ולידציה ל assigned
   if (!isOnlyUnitUpdate && updatedStatus === "assigned") {
     const assignedUserId =
       item.assignedToUserId ?? currentItem.assignedToUserId;
-
     const signedAt = item.signedAt ?? currentItem.signedAt;
 
     if (!assignedUserId) {
@@ -388,13 +388,11 @@ async function updateInventoryItem(
     }
   }
 
-  // 🔹 not_assigned
   if (!isOnlyUnitUpdate && updatedStatus === "not_assigned") {
     item.assignedToUserId = null;
     item.signedAt = null;
   }
 
-  // 🔹 בדיקת כפילויות
   const updatedDeviceNumber = item.deviceNumber ?? currentItem.deviceNumber;
 
   const duplicateItem = await InventoryItemModel.findOne({
@@ -409,11 +407,39 @@ async function updateInventoryItem(
       "Inventory item already exists for this sheet and device number",
     );
   }
-  console.log("🔥 UPDATE PAYLOAD:", item);
-  return InventoryItemModel.findByIdAndUpdate(id, item, {
+
+  const updatedItem = await InventoryItemModel.findByIdAndUpdate(id, item, {
     new: true,
     runValidators: true,
   }).exec();
+
+  if (!updatedItem) {
+    return null;
+  }
+
+  if (unitChanged) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().slice(0, 10);
+
+    await DailyReportModel.updateMany(
+      {
+        sheetId: currentItem.sheetId,
+        deviceNumber: currentItem.deviceNumber,
+        reportDate: { $gte: todayStr },
+      },
+      {
+        $set: {
+          unit: nextUnit,
+          unitResponsibleUserId:
+            item.unitResponsibleUserId ?? currentItem.unitResponsibleUserId,
+          assignedToUserId: null,
+        },
+      },
+    ).exec();
+  }
+
+  return updatedItem;
 }
 
 async function returnInventoryItem(
