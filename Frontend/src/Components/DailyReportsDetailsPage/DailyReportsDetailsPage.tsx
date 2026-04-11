@@ -242,7 +242,14 @@ function DailyReportDetailsPage(): JSX.Element {
     ),
   ) as string[];
 
-  const uniqueUnits: string[] = data?.availableUnits ?? [];
+  const uniqueUnits: string[] = Array.from(
+    new Set([
+      ...(data?.availableUnits ?? []),
+      ...rows
+        .map((row) => String(row.unit ?? "").trim())
+        .filter((unit) => unit.length > 0),
+    ]),
+  ).sort((a, b) => a.localeCompare(b, "he"));
 
   function compareRowsBySortOption(
     a: DailyReportRow,
