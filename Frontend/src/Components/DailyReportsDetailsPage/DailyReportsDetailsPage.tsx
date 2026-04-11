@@ -62,6 +62,7 @@ type DailyReportResponse = {
   };
   reportDate: string;
   rows: DailyReportRow[];
+  availableUnits: string[];
 };
 
 function DailyReportDetailsPage(): JSX.Element {
@@ -241,13 +242,7 @@ function DailyReportDetailsPage(): JSX.Element {
     ),
   ) as string[];
 
-  const uniqueUnits = Array.from(
-    new Set(
-      rows
-        .map((row) => String(row.unit ?? "").trim())
-        .filter((unit) => unit.length > 0),
-    ),
-  ) as string[];
+  const uniqueUnits: string[] = data?.availableUnits ?? [];
 
   function compareRowsBySortOption(
     a: DailyReportRow,
@@ -547,9 +542,10 @@ function DailyReportDetailsPage(): JSX.Element {
               const rowKey = getRowKey(row);
               const savedStatus = getSavedStatus(row);
               const currentStatus = pendingChanges[rowKey] ?? savedStatus;
-              const currentUnit = pendingUnitChanges[rowKey] ?? (row.unit ?? "");
+              const currentUnit = pendingUnitChanges[rowKey] ?? row.unit ?? "";
               const isChanged =
-                savedStatus !== currentStatus || currentUnit !== (row.unit ?? "");
+                savedStatus !== currentStatus ||
+                currentUnit !== (row.unit ?? "");
 
               const unitName = getUnitName(row);
               const unitManagerName = getUnitManagerName(row);

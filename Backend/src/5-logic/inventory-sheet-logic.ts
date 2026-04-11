@@ -46,7 +46,6 @@ async function createCleanInventorySheet(data: {
     description?: string;
     createdByUserId: string;
 }): Promise<IInventorySheet> {
-
     const creator = await UserModel.findOne({
         personalNumber: data.createdByUserId,
         isActive: true
@@ -259,7 +258,7 @@ async function getInventorySheetFull(
         )
     );
 
-    const [devices, users] = await Promise.all([
+    const [devices, users, activeUsersForUnits] = await Promise.all([
         DeviceModel.find({
             deviceNumber: { $in: deviceNumbers },
             isActive: true
@@ -272,8 +271,24 @@ async function getInventorySheetFull(
             isActive: true
         })
             .lean()
+            .exec(),
+
+        UserModel.find({
+            isActive: true,
+            unit: { $exists: true, $nin: [null, ""] }
+        })
+            .select("unit")
+            .lean()
             .exec()
     ]);
+
+    const availableUnits = Array.from(
+        new Set(
+            activeUsersForUnits
+                .map(user => String(user.unit ?? "").trim())
+                .filter(unit => unit.length > 0)
+        )
+    ).sort((a, b) => a.localeCompare(b, "he"));
 
     const devicesMap = new Map(
         devices.map(device => [device.deviceNumber, device])
@@ -362,6 +377,7 @@ async function getInventorySheetFull(
         items,
         dailyReports,
         rows,
+        availableUnits,
         counts: {
             itemsCount: items.length,
             reportedCount: rows.filter(row => row.dailyReport.status === "reported").length,
