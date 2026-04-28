@@ -16,6 +16,7 @@ import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
+import "./DailyReportsDetailsPage.css";
 
 type ReportStatus = "reported" | "not_reported";
 
