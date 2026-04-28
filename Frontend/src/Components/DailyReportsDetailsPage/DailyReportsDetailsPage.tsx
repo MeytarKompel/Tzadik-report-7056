@@ -333,6 +333,7 @@ function DailyReportDetailsPage(): JSX.Element {
   return (
     <div dir="rtl" style={{ padding: "20px" }}>
       <button onClick={() => navigate(-1)}>חזור</button>
+      <button onClick={() => navigate("/admin-dashboard")} className="backToMainPage">בחזרה למסך הראשי</button>
 
       <h1>{data.sheet.sheetName}</h1>
       <h3>📅 {data.reportDate}</h3>
