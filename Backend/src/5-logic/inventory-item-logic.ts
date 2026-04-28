@@ -157,7 +157,7 @@ async function getDailyInventoryStatusByUnitResponsibleUserId(
   const items = await InventoryItemModel.find({
     unitResponsibleUserId,
     isDeleted: false,
-    status: "assigned",
+    status: { $in: ["assigned", "not_assigned"] },
   })
     .sort({ createdAt: -1 })
     .lean()
@@ -181,12 +181,14 @@ async function getDailyInventoryStatusByUnitResponsibleUserId(
             .lean()
             .exec(),
 
-          UserModel.findOne({
-            personalNumber: item.assignedToUserId,
-            isActive: true,
-          })
-            .lean()
-            .exec(),
+          item.assignedToUserId
+            ? UserModel.findOne({
+                personalNumber: item.assignedToUserId,
+                isActive: true,
+              })
+                .lean()
+                .exec()
+            : null,
 
           UserModel.findOne({
             personalNumber: item.unitResponsibleUserId,
@@ -201,11 +203,14 @@ async function getDailyInventoryStatusByUnitResponsibleUserId(
         deviceNumber: item.deviceNumber,
         deviceName: device?.deviceName ?? null,
         unit: item.unit,
-        assignedUser: {
-          personalNumber: item.assignedToUserId,
-          fullName: assignedUser?.fullName ?? null,
-          phone: assignedUser?.phone ?? null,
-        },
+        inventoryStatus: item.status,
+        assignedUser: item.assignedToUserId
+          ? {
+              personalNumber: item.assignedToUserId,
+              fullName: assignedUser?.fullName ?? null,
+              phone: assignedUser?.phone ?? null,
+            }
+          : null,
         unitResponsibleUser: {
           personalNumber: item.unitResponsibleUserId,
           fullName: unitResponsibleUser?.fullName ?? null,
