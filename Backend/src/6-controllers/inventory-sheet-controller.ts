@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import inventorySheetLogic from "../5-logic/inventory-sheet-logic";
+import inventoryItemLogic from "../5-logic/inventory-item-logic";
 
 const router = express.Router();
 
@@ -185,5 +186,22 @@ router.delete("/inventory-sheets/:id", async (req: Request, res: Response, next:
         next(err);
     }
 });
+
+
+router.get(
+  "/inventory-items/assigned-user/daily-status/:assignedToUserId/:reportDate",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const items = await inventoryItemLogic.getDailyInventoryStatusByAssignedToUserId(
+        req.params.assignedToUserId,
+        req.params.reportDate
+      );
+
+      res.json(items);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 export default router;

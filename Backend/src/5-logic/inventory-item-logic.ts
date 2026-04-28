@@ -497,6 +497,84 @@ async function softDeleteInventoryItem(
   ).exec();
 }
 
+async function getDailyInventoryStatusByAssignedToUserId(
+  assignedToUserId: string,
+  reportDate: string,
+): Promise<any[]> {
+  const items = await InventoryItemModel.find({
+    assignedToUserId,
+    isDeleted: false,
+    status: "assigned",
+  })
+    .sort({ createdAt: -1 })
+    .lean()
+    .exec();
+
+  const result = await Promise.all(
+    items.map(async (item) => {
+      const [report, device, assignedUser, unitResponsibleUser] =
+        await Promise.all([
+          ReportModel.findOne({
+            deviceNumber: item.deviceNumber,
+            reportDate,
+          })
+            .lean()
+            .exec(),
+
+          DeviceModel.findOne({
+            deviceNumber: item.deviceNumber,
+            isActive: true,
+          })
+            .lean()
+            .exec(),
+
+          UserModel.findOne({
+            personalNumber: item.assignedToUserId,
+            isActive: true,
+          })
+            .lean()
+            .exec(),
+
+          UserModel.findOne({
+            personalNumber: item.unitResponsibleUserId,
+            isActive: true,
+          })
+            .lean()
+            .exec(),
+        ]);
+
+      return {
+        inventoryItemId: item._id,
+        sheetId: item.sheetId,
+        deviceNumber: item.deviceNumber,
+        deviceName: device?.deviceName ?? null,
+        unit: item.unit,
+        inventoryStatus: item.status,
+        assignedUser: {
+          personalNumber: item.assignedToUserId,
+          fullName: assignedUser?.fullName ?? null,
+          phone: assignedUser?.phone ?? null,
+        },
+        unitResponsibleUser: {
+          personalNumber: item.unitResponsibleUserId,
+          fullName: unitResponsibleUser?.fullName ?? null,
+          phone: unitResponsibleUser?.phone ?? null,
+        },
+        reportDate,
+        dailyReportStatus: report?.status ?? "not_reported",
+        reportId: report?._id ?? null,
+        location: report?.location ?? null,
+        notes: report?.notes ?? null,
+        lastReportDate: item.lastReportDate ?? null,
+        lastReportStatus: item.lastReportStatus ?? null,
+        lastReportedByUserId: item.lastReportedByUserId ?? null,
+      };
+    }),
+  );
+
+  return result;
+}
+
 export default {
   getAllInventoryItems,
   getInventoryItemById,
@@ -509,6 +587,7 @@ export default {
   getActiveAssignedInventoryItemForUserAndDevice,
   getDailyInventoryStatus,
   getDailyInventoryStatusByUnitResponsibleUserId,
+  getDailyInventoryStatusByAssignedToUserId,
   addInventoryItem,
   updateInventoryItem,
   returnInventoryItem,
