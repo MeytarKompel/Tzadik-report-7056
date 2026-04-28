@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Alert from "@mui/material/Alert";
 import "./AdminDashboardPage.css";
+import Snackbar from "@mui/material/Snackbar";
 import AdminSummaryCard from "../../Components/AdminSummaryCard/AdminSummaryCard";
 import AddDeviceDialog from "../../Components/AddDeviceDialog/AddDeviceDialog";
 import AddUserDialog from "../../Components/AddUserDialog/AddUserDialog";
@@ -35,6 +36,8 @@ function AdminDashboardPage(): JSX.Element {
 
   const [isSheetDialogOpen, setIsSheetDialogOpen] = useState<boolean>(false);
   const [isDailyDialogOpen, setIsDailyDialogOpen] = useState<boolean>(false);
+
+  const [isSheetToastOpen, setIsSheetToastOpen] = useState<boolean>(false);
 
   const navigate = useNavigate();
 
@@ -80,7 +83,7 @@ function AdminDashboardPage(): JSX.Element {
         "טעינת המשתמשים נכשלה";
 
       setUserError(
-        typeof message === "string" ? message : "טעינת המשתמשים נכשלה"
+        typeof message === "string" ? message : "טעינת המשתמשים נכשלה",
       );
     } finally {
       setIsUsersLoading(false);
@@ -134,11 +137,28 @@ function AdminDashboardPage(): JSX.Element {
 
   async function saveSheet(
     sheetName: string,
-    description: string
+    description: string,
   ): Promise<void> {
-    await inventoryService.createSheet(sheetName, description);
-    await loadSheets();
-    setIsSheetDialogOpen(false);
+    try {
+      setSheetError("");
+      setSheetMessage("");
+
+      await inventoryService.createSheet(sheetName, description);
+      await loadSheets();
+
+      setSheetMessage("הגיליון נוצר בהצלחה");
+      setIsSheetToastOpen(true);
+      setIsSheetDialogOpen(false);
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data ||
+        "יצירת גיליון נכשלה";
+
+      setSheetError(
+        typeof message === "string" ? message : "יצירת גיליון נכשלה",
+      );
+    }
   }
 
   async function createDaily(sheetId: string, date: string): Promise<void> {
@@ -222,10 +242,7 @@ function AdminDashboardPage(): JSX.Element {
 
               <button type="button">מעקב אחרי לא דווח</button>
 
-              <button
-                type="button"
-                onClick={() => navigate("/import-devices")}
-              >
+              <button type="button" onClick={() => navigate("/import-devices")}>
                 ייבוא מכשירים מ-CSV
               </button>
 
@@ -243,12 +260,6 @@ function AdminDashboardPage(): JSX.Element {
               {sheetError && (
                 <Alert severity="error" variant="filled" sx={{ mt: 2 }}>
                   {sheetError}
-                </Alert>
-              )}
-
-              {sheetMessage && (
-                <Alert severity="success" variant="filled" sx={{ mt: 2 }}>
-                  {sheetMessage}
                 </Alert>
               )}
             </div>
@@ -287,7 +298,7 @@ function AdminDashboardPage(): JSX.Element {
                         <td>
                           {device.createdAt
                             ? new Date(device.createdAt).toLocaleDateString(
-                                "he-IL"
+                                "he-IL",
                               )
                             : "-"}
                         </td>
@@ -318,12 +329,7 @@ function AdminDashboardPage(): JSX.Element {
                 מנהלים: {users.filter((user) => user.role === "admin").length}
               </li>
               <li>
-                משקש:{" "}
-                {
-                  users.filter(
-                    (user) => user.role === "mashkash"
-                  ).length
-                }
+                משקש: {users.filter((user) => user.role === "mashkash").length}
               </li>
               <li>
                 משתמשים רגילים:{" "}
@@ -359,7 +365,7 @@ function AdminDashboardPage(): JSX.Element {
                   </thead>
                   <tbody>
                     {users.map((user) => (
-                      <tr key={user.personalNumber || user.personalNumber}>
+                      <tr key={user.personalNumber}>
                         <td>{user.personalNumber}</td>
                         <td>{user.fullName}</td>
                         <td>{user.phone}</td>
@@ -368,8 +374,8 @@ function AdminDashboardPage(): JSX.Element {
                           {user.role === "admin"
                             ? "מנהל"
                             : user.role === "mashkash"
-                            ? "משקש"
-                            : "רגיל"}
+                              ? "משקש"
+                              : "רגיל"}
                         </td>
                       </tr>
                     ))}
@@ -405,6 +411,27 @@ function AdminDashboardPage(): JSX.Element {
         onSave={createDaily}
         sheets={sheets}
       />
+
+      <Snackbar
+        open={isSheetToastOpen}
+        autoHideDuration={3000}
+        onClose={() => setIsSheetToastOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setIsSheetToastOpen(false)}
+          severity="success"
+          variant="filled"
+          sx={{
+            width: "100%",
+            fontSize: "16px",
+            borderRadius: "14px",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+          }}
+        >
+          {sheetMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }
