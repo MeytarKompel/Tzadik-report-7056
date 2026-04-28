@@ -197,29 +197,8 @@ function DailyReportDetailsPage(): JSX.Element {
         );
       }
 
-      setData((prev) => {
-        if (!prev) return prev;
-
-        return {
-          ...prev,
-          rows: prev.rows.map((row) => {
-            const rowKey = getRowKey(row);
-            const changedStatus = pendingChanges[rowKey];
-            const changedUnit = pendingUnitChanges[rowKey];
-
-            return {
-              ...row,
-              unit: changedUnit ?? row.unit,
-              dailyReport: changedStatus
-                ? {
-                    ...row.dailyReport,
-                    status: changedStatus,
-                  }
-                : row.dailyReport,
-            };
-          }),
-        };
-      });
+      // טוען מחדש מהשרת כדי שגם אחראי היחידה ב-tooltip יתעדכן
+      await loadData();
 
       setPendingChanges({});
       setPendingUnitChanges({});
