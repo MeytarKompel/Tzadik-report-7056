@@ -162,8 +162,26 @@ function AdminDashboardPage(): JSX.Element {
   }
 
   async function createDaily(sheetId: string, date: string): Promise<void> {
-    await dailyReportService.createDaily(sheetId, date);
-    setIsDailyDialogOpen(false);
+    try {
+      setSheetError("");
+      setSheetMessage("");
+
+      await dailyReportService.createDaily(sheetId, date);
+
+      setSheetMessage("הדיווח היומי נוצר בהצלחה");
+      setIsSheetToastOpen(true);
+
+      setIsDailyDialogOpen(false);
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data ||
+        "יצירת דיווח יומי נכשלה";
+
+      setSheetError(
+        typeof message === "string" ? message : "יצירת דיווח יומי נכשלה",
+      );
+    }
   }
 
   const sortedDevices = [...devices].sort((a, b) => {
