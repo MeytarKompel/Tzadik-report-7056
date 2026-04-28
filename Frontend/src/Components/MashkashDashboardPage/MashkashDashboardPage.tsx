@@ -48,6 +48,7 @@ function MashkashDashboardPage(): JSX.Element {
   const [assignmentFilter, setAssignmentFilter] = useState<
     "all" | "assigned" | "not_assigned"
   >("all");
+  const [assignedUserFilter, setAssignedUserFilter] = useState("");
   const [sortOption, setSortOption] = useState<SortOption>("notReportedFirst");
   const [loading, setLoading] = useState(true);
 
@@ -97,7 +98,10 @@ function MashkashDashboardPage(): JSX.Element {
       const matchSearch =
         searchText === "" ||
         String(row.deviceNumber ?? "").includes(searchText) ||
-        String(row.deviceName ?? "").includes(searchText);
+        String(row.deviceName ?? "").includes(searchText) ||
+        String(row.assignedUser?.fullName ?? "").includes(searchText) ||
+        String(row.assignedUser?.personalNumber ?? "").includes(searchText) ||
+        String(row.assignedUser?.phone ?? "").includes(searchText);
 
       const matchStatus =
         statusFilter === "all" || row.dailyReportStatus === statusFilter;
@@ -105,7 +109,11 @@ function MashkashDashboardPage(): JSX.Element {
       const matchAssignment =
         assignmentFilter === "all" || row.inventoryStatus === assignmentFilter;
 
-      return matchSearch && matchStatus && matchAssignment;
+      const matchAssignedUser =
+        assignedUserFilter === "" ||
+        row.assignedUser?.personalNumber === assignedUserFilter;
+
+      return matchSearch && matchStatus && matchAssignment && matchAssignedUser;
     });
 
     return [...filtered].sort((a, b) => {
@@ -198,6 +206,27 @@ function MashkashDashboardPage(): JSX.Element {
           <option value="deviceNameDesc">שם מכשיר: ת-א</option>
         </select>
 
+        <select
+          value={assignedUserFilter}
+          onChange={(e) => setAssignedUserFilter(e.target.value)}
+        >
+          <option value="">כל המשתמשים</option>
+          {Array.from(
+            new Map(
+              rows
+                .filter((row) => row.assignedUser)
+                .map((row) => [
+                  row.assignedUser!.personalNumber,
+                  row.assignedUser!,
+                ]),
+            ).values(),
+          ).map((user) => (
+            <option key={user.personalNumber} value={user.personalNumber}>
+              {user.fullName ?? user.personalNumber}
+            </option>
+          ))}
+        </select>
+
         <button
           type="button"
           onClick={() => {
@@ -205,6 +234,7 @@ function MashkashDashboardPage(): JSX.Element {
             setStatusFilter("all");
             setAssignmentFilter("all");
             setSortOption("notReportedFirst");
+            setAssignedUserFilter("");
           }}
         >
           נקה סינון
